@@ -14,6 +14,12 @@ class _HomeState extends State<Home> {
   final TextEditingController urlText = TextEditingController();
   final yt = YoutubeExplode();
 
+  List<String> videoQualities = [];
+  List<String> audioQualities = [];
+
+  String? selectedVideoQuality;
+  String? selectedAudioQuality;
+
   @override
   void initState() {
     super.initState();
@@ -139,13 +145,15 @@ class _HomeState extends State<Home> {
       await downloadAudioStream(manifest, video);
 
       await downloadVideoStream(manifest, video);
+
+      _showDialog(context, video);
+
     } catch (e) {
       print("Error : $e");
     }
   }
 
-  Future<void> downloadAudioStream(
-      StreamManifest manifest, Video videoMetaData) async {
+  Future<void> downloadAudioStream(StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the audio track with the highest bitrate.
@@ -154,8 +162,8 @@ class _HomeState extends State<Home> {
     //* DEBUG
     if (kDebugMode) {
       for (var streamInfo in streams) {
-        print(
-            'Quality: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+        print('Quality: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+        audioQualities.add(streamInfo.bitrate.toString());
       }
     }
 
@@ -206,8 +214,7 @@ class _HomeState extends State<Home> {
     // await output.close();
   }
 
-  Future<void> downloadVideoStream(
-      StreamManifest manifest, Video videoMetaData) async {
+  Future<void> downloadVideoStream(StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the video track
@@ -216,8 +223,8 @@ class _HomeState extends State<Home> {
     //* DEBUG
     if (kDebugMode) {
       for (var streamInfo in streams) {
-        print(
-            'Quality: ${streamInfo.qualityLabel}, Codec: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+        print('Quality: ${streamInfo.qualityLabel}, Codec: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+        videoQualities.add(streamInfo.qualityLabel);
       }
     }
 
@@ -266,6 +273,100 @@ class _HomeState extends State<Home> {
     //   output.add(data);
     // }
     // await output.close();
+  }
+
+  void _showDialog(BuildContext context, Video videoMetaData) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: SizedBox(
+            width: 600,
+            height: 600,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Image.network(
+                    videoMetaData.thumbnails.standardResUrl,
+                    width: 300,
+                    height: 150,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Group 1
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Select Video Quality", style: TextStyle(fontSize: 18)),
+                          ...videoQualities.map((value) {
+                            return Row(
+                              children: [
+                                Radio<String>(
+                                  value: value,
+                                  groupValue: selectedVideoQuality,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedVideoQuality = newValue;
+                                    });
+                                  },
+                                ),
+                                Text(value),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                      // Group 2
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Select Audio Quality", style: TextStyle(fontSize: 18)),
+                          ...audioQualities.map((value) {
+                            return Row(
+                              children: [
+                                Radio<String>(
+                                  value: value,
+                                  groupValue: selectedAudioQuality,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      selectedAudioQuality = newValue;
+                                    });
+                                  },
+                                ),
+                                Text(value),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Handle download action
+                    },
+                    icon: Icon(Icons.download),
+                    label: Text('Download'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
