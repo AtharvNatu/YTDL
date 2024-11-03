@@ -5,17 +5,19 @@ import 'dart:ui' as ui;
 import 'package:ytdl/home.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
 
+  // Code
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    WidgetsFlutterBinding.ensureInitialized();
+    await windowManager.ensureInitialized();
+
     WindowOptions windowOptions = const WindowOptions(
       size: ui.Size(900, 600),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       fullScreen: false,
-      title: "YTDL : YouTube Downloader",
+      title: "YTDL : YouTube Video Downloader",
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
@@ -33,7 +35,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YTDL : YouTube Video Downloader',
       home: const Home(),
     );
   }
