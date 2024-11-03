@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'YTDL : YouTube Downloader',
+      title: 'YTDL : YouTube Video Downloader',
       home: const Home(),
     );
   }

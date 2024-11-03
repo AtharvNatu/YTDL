@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:validator_regex/validator_regex.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -37,94 +37,203 @@ class _HomeState extends State<Home> {
     );
 
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color.fromARGB(255, 241, 89, 115),
-          title: const Text(
-            "YTDL : YouTube Downloader",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w400,
-              fontFamily: "Poppins",
-              color: Colors.white,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Column(
+              children: [
+                const Image(
+                  image: AssetImage("assets/images/youtube.png"),
+                  width: 150,
+                  height: 150,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "YouTube Video Downloader",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Poppins",
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: style,
-              onPressed: () {
-                yt.close();
-                exit(0);
-              },
-              child: const Text("Exit"),
+            // URL Input and Search Button Section
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: TextField(
+                    controller: urlText,
+                    style: const TextStyle(color: Colors.black),
+                    keyboardType: TextInputType.visiblePassword,
+                    decoration: InputDecoration(
+                      hintText: "Enter Video URL",
+                      hintStyle: const TextStyle(
+                        color: Colors.grey,
+                        fontFamily: "Poppins",
+                      ),
+                      prefixIcon: const Icon(Icons.link_rounded),
+                      suffixIcon: GestureDetector(
+                        onTap: clearText,
+                        child: const Icon(Icons.clear_rounded),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      focusedBorder: border,
+                      enabledBorder: border,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(250, 50),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontFamily: "Poppins",
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  label: const Text("Search Video"),
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    if (urlText.text.isNotEmpty && Validator.url(urlText.text)) {
+                      searchVideo(urlText.text);
+                    } else if (!Validator.url(urlText.text)) {
+                      showAlertDialog(context);
+                    }
+                  },
+                ),
+              ],
             ),
           ],
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Image(image: AssetImage("assets/images/youtube.png")),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: urlText,
-                  style: const TextStyle(color: Colors.black),
-                  keyboardType: TextInputType.visiblePassword,
-                  decoration: InputDecoration(
-                    hintText: "Enter Video URL",
-                    hintStyle: const TextStyle(
-                      color: Colors.black,
-                      fontFamily: "Poppins",
-                    ),
-                    prefixIcon: const Icon(Icons.link_rounded),
-                    prefixIconColor: Colors.black,
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
-                      child: GestureDetector(
-                        onTap: clearText,
-                        child: Icon(
-                          Icons.clear_rounded,
-                          size: 24,
-                        ),
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    focusedBorder: border,
-                    enabledBorder: border,
-                  ),
-                ),
-              ),
-              Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      textStyle: TextStyle(
-                        fontSize: 16,
-                        fontFamily: "Poppins",
-                        color: Colors.white,
-                      ),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30)),
-                    ),
-                    label: const Text("Select Image"),
-                    icon: Image.asset("assets/images/search.png"),
-                    onPressed: () {
-                      if (urlText.text.isNotEmpty) {
-                        searchVideo(urlText.text);
-                      }
-                    },
-                  )),
-            ],
-          ),
-        ));
+      ),
+    );
+
+
+    // return Scaffold(
+     //    appBar: AppBar(
+     //      backgroundColor: const Color.fromARGB(255, 241, 89, 115),
+     //      title: const Text(
+     //        "YTDL : YouTube Downloader",
+     //        style: TextStyle(
+     //          fontSize: 18,
+     //          fontWeight: FontWeight.w400,
+     //          fontFamily: "Poppins",
+     //          color: Colors.white,
+     //        ),
+     //      ),
+     //      actions: <Widget>[
+     //        TextButton(
+     //          style: style,
+     //          onPressed: () {
+     //            yt.close();
+     //            exit(0);
+     //          },
+     //          child: const Text("Exit"),
+     //        ),
+     //      ],
+     //    ),
+     //    body: Center(
+     //      child: Column(
+     //        mainAxisAlignment: MainAxisAlignment.center,
+     //        children: [
+     //          const Image(image: AssetImage("assets/images/youtube.png")),
+     //          Padding(
+     //            padding: const EdgeInsets.all(10.0),
+     //            child: TextField(
+     //              controller: urlText,
+     //              style: const TextStyle(color: Colors.black),
+     //              keyboardType: TextInputType.visiblePassword,
+     //              decoration: InputDecoration(
+     //                hintText: "Enter Video URL",
+     //                hintStyle: const TextStyle(
+     //                  color: Colors.black,
+     //                  fontFamily: "Poppins",
+     //                ),
+     //                prefixIcon: const Icon(Icons.link_rounded),
+     //                prefixIconColor: Colors.black,
+     //                suffixIcon: Padding(
+     //                  padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
+     //                  child: GestureDetector(
+     //                    onTap: clearText,
+     //                    child: Icon(
+     //                      Icons.clear_rounded,
+     //                      size: 24,
+     //                    ),
+     //                  ),
+     //                ),
+     //                filled: true,
+     //                fillColor: Colors.white,
+     //                focusedBorder: border,
+     //                enabledBorder: border,
+     //              ),
+     //            ),
+     //          ),
+     //          Padding(
+     //              padding: const EdgeInsets.all(20.0),
+     //              child: ElevatedButton.icon(
+     //                style: ElevatedButton.styleFrom(
+     //                  backgroundColor: Colors.blueGrey,
+     //                  foregroundColor: Colors.white,
+     //                  minimumSize: const Size(250, 60),
+     //                  textStyle: TextStyle(
+     //                    fontSize: 16,
+     //                    fontFamily: "Poppins",
+     //                    color: Colors.white,
+     //                  ),
+     //                  shape: RoundedRectangleBorder(
+     //                      borderRadius: BorderRadius.circular(30)),
+     //                ),
+     //                label: const Text("Search Video"),
+     //                icon: Image.asset("assets/images/search.png"),
+     //                onPressed: () {
+     //                  if (urlText.text.isNotEmpty && Validator.url(urlText.text)) {
+     //                    searchVideo(urlText.text);
+     //                  }
+     //                  else if (!Validator.url(urlText.text)) {
+     //                    showAlertDialog(context);
+     //                  }
+     //                },
+     //              )),
+     //        ],
+     //      ),
+     //    ));
   }
 
   void clearText() {
     urlText.clear();
+  }
+
+  void showAlertDialog(BuildContext context) {
+    // Code
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Error'),
+        content: const Text("Invalid URL ... Please Enter Valid URL !!!"),
+        backgroundColor: Colors.red,
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'OK'),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> searchVideo(String url) async {
@@ -159,12 +268,11 @@ class _HomeState extends State<Home> {
     // Get the audio track with the highest bitrate.
     final streams = manifest.audioOnly;
 
-    //* DEBUG
-    if (kDebugMode) {
-      for (var streamInfo in streams) {
-        print('Quality: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
-        audioQualities.add(streamInfo.bitrate.toString());
-      }
+    audioQualities.clear();
+    for (var streamInfo in streams) {
+      // print('Quality: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+      String tempStr = "${streamInfo.bitrate} : ${streamInfo.size}";
+      audioQualities.add(tempStr);
     }
 
     final audio = streams.withHighestBitrate();
@@ -220,11 +328,13 @@ class _HomeState extends State<Home> {
     // Get the video track
     final streams = manifest.videoOnly;
 
-    //* DEBUG
-    if (kDebugMode) {
-      for (var streamInfo in streams) {
-        print('Quality: ${streamInfo.qualityLabel}, Codec: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
-        videoQualities.add(streamInfo.qualityLabel);
+    // print('Quality: ${streamInfo.qualityLabel}, Codec: ${streamInfo.codec}, Bitrate: ${streamInfo.bitrate}, Size: ${streamInfo.size}');
+
+    videoQualities.clear();
+    for (var streamInfo in streams) {
+      if (streamInfo.qualityLabel != "144p") {
+        String tempStr = "${streamInfo.qualityLabel} : ${streamInfo.size}";
+        videoQualities.add(tempStr);
       }
     }
 
@@ -275,10 +385,113 @@ class _HomeState extends State<Home> {
     // await output.close();
   }
 
+  // void _showDialog(BuildContext context, Video videoMetaData) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: true,
+  //     builder: (BuildContext context) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(15),
+  //         ),
+  //         child: SizedBox(
+  //           width: 600,
+  //           height: 600,
+  //           child: Column(
+  //             children: [
+  //               Padding(
+  //                 padding: const EdgeInsets.all(8.0),
+  //                 child: Image.network(
+  //                   videoMetaData.thumbnails.standardResUrl,
+  //                   width: 300,
+  //                   height: 150,
+  //                   fit: BoxFit.contain,
+  //                 ),
+  //               ),
+  //               Padding(
+  //                 padding: const EdgeInsets.all(8.0),
+  //                 child: Text(videoMetaData.title)
+  //               ),
+  //               Expanded(
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //                   children: [
+  //                     Column(
+  //                       mainAxisAlignment: MainAxisAlignment.center,
+  //                       children: [
+  //                         Text("Select Video Quality", style: TextStyle(fontSize: 18)),
+  //                         DropdownMenu<String>(
+  //                           initialSelection: videoQualities.first,
+  //                           enableSearch: false,
+  //                           enableFilter: false,
+  //                           onSelected: (String? newValue) {
+  //                             setState(() {
+  //                               selectedVideoQuality = newValue;
+  //                             });
+  //                           },
+  //                           dropdownMenuEntries: videoQualities.map<DropdownMenuEntry<String>>((String value) {
+  //                             return DropdownMenuEntry<String>(value: value, label: value);
+  //                           }).toList(),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     // Group 2
+  //                     Column(
+  //                       mainAxisAlignment: MainAxisAlignment.center,
+  //                       children: [
+  //                         Text("Select Audio Quality", style: TextStyle(fontSize: 18)),
+  //                         DropdownMenu<String>(
+  //                           initialSelection: audioQualities.first,
+  //                           enableSearch: false,
+  //                           enableFilter: false,
+  //                           onSelected: (String? newValue) {
+  //                             setState(() {
+  //                               selectedAudioQuality = newValue;
+  //                             });
+  //                           },
+  //                           dropdownMenuEntries: audioQualities.map<DropdownMenuEntry<String>>((String value) {
+  //                             return DropdownMenuEntry<String>(value: value, label: value);
+  //                           }).toList(),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //               Padding(
+  //                 padding: const EdgeInsets.all(2.0),
+  //                 child: ElevatedButton.icon(
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.blueGrey,
+  //                     foregroundColor: Colors.white,
+  //                     minimumSize: const Size(50, 50),
+  //                     textStyle: TextStyle(
+  //                       fontSize: 16,
+  //                       fontFamily: "Poppins",
+  //                       color: Colors.white,
+  //                     ),
+  //                     shape: RoundedRectangleBorder(
+  //                         borderRadius: BorderRadius.circular(30)),
+  //                   ),
+  //                   onPressed: () {
+  //                     exit(0);
+  //                   },
+  //                   icon: Icon(Icons.download),
+  //                   label: Text('Download'),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
   void _showDialog(BuildContext context, Video videoMetaData) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -287,87 +500,119 @@ class _HomeState extends State<Home> {
           child: SizedBox(
             width: 600,
             height: 600,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.network(
-                    videoMetaData.thumbnails.standardResUrl,
-                    width: 300,
-                    height: 150,
-                    fit: BoxFit.contain,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0), // Added padding around the entire dialog content
+              child: Column(
+                children: [
+                  // Image Section
+                  Container(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Image.network(
+                      videoMetaData.thumbnails.standardResUrl,
+                      width: 320,
+                      height: 180,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Group 1
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Select Video Quality", style: TextStyle(fontSize: 18)),
-                          ...videoQualities.map((value) {
-                            return Row(
-                              children: [
-                                Radio<String>(
-                                  value: value,
-                                  groupValue: selectedVideoQuality,
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      selectedVideoQuality = newValue;
-                                    });
-                                  },
-                                ),
-                                Text(value),
-                              ],
-                            );
-                          }),
-                        ],
+                  // Title Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      videoMetaData.title,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  // Dropdown Menu Section
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Video Quality Dropdown
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Select Video Quality",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 241, 89, 115)),
+                            ),
+                            SizedBox(height: 8.0),
+                            DropdownMenu<String>(
+                              initialSelection: videoQualities.first,
+                              enableSearch: false,
+                              enableFilter: false,
+                              onSelected: (String? newValue) {
+                                setState(() {
+                                  selectedVideoQuality = newValue;
+                                });
+                              },
+                              dropdownMenuEntries: videoQualities.map<DropdownMenuEntry<String>>((String value) {
+                                return DropdownMenuEntry<String>(value: value, label: value);
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                        // Audio Quality Dropdown
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Select Audio Quality",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 241, 89, 115)),
+                            ),
+                            SizedBox(height: 8.0),
+                            DropdownMenu<String>(
+                              initialSelection: audioQualities.first,
+                              enableSearch: false,
+                              enableFilter: false,
+                              onSelected: (String? newValue) {
+                                setState(() {
+                                  selectedAudioQuality = newValue;
+                                });
+                              },
+                              dropdownMenuEntries: audioQualities.map<DropdownMenuEntry<String>>((String value) {
+                                return DropdownMenuEntry<String>(value: value, label: value);
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Download Button Section
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(200, 50),
+                        textStyle: TextStyle(
+                          fontSize: 16,
+                          fontFamily: "Poppins",
+                          color: Colors.white,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
-                      // Group 2
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Select Audio Quality", style: TextStyle(fontSize: 18)),
-                          ...audioQualities.map((value) {
-                            return Row(
-                              children: [
-                                Radio<String>(
-                                  value: value,
-                                  groupValue: selectedAudioQuality,
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      selectedAudioQuality = newValue;
-                                    });
-                                  },
-                                ),
-                                Text(value),
-                              ],
-                            );
-                          }),
-                        ],
-                      ),
-                    ],
+                      onPressed: () {
+                        exit(0);
+                      },
+                      icon: Icon(Icons.download),
+                      label: Text('Download'),
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Handle download action
-                    },
-                    icon: Icon(Icons.download),
-                    label: Text('Download'),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
     );
   }
+
+
 
   @override
   void dispose() {
