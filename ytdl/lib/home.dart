@@ -17,12 +17,14 @@ class _HomeState extends State<Home> {
   final yt = YoutubeExplode();
 
   List<String> videoQualities = [];
-  List<String> videoSize = [];
-  List<String> audioQualities = [];
-  List<double> audioSize = [];
+  List<double> videoSize = [];
+  List<String> videoOptions = [];
 
-  Map<String, String> videoMap = {};
-  Map<String, double> audioMap = {};
+  List<double> audioQualities = [];
+  List<double> audioSize = [];
+  List<String> audioOptions = [];
+
+  late AudioOnlyStreamInfo audioTrack;
 
   String? selectedVideoQuality;
   String? selectedAudioQuality;
@@ -207,15 +209,20 @@ class _HomeState extends State<Home> {
     final streams = manifest.audioOnly;
 
     for (var streamInfo in streams) {
-      // String tempStr = "${streamInfo.bitrate} : ${streamInfo.size}";
-      audioQualities.add(streamInfo.bitrate.toString());
+      audioQualities.add(streamInfo.bitrate.kiloBitsPerSecond);
       audioSize.add(streamInfo.size.totalMegaBytes);
     }
 
+    // Sort lists
     audioSize.sort();
-    audioMap = Map.fromIterables(audioQualities, audioSize);
+    audioQualities.sort();
+    
+    for (int i = 0; i < audioSize.length; i++) {
+      audioOptions.add("${audioQualities.elementAt(i).toStringAsFixed(1)} Kbps : ${audioSize.elementAt(i).toStringAsFixed(1)} MB");
+    }
 
     final audio = streams.withHighestBitrate();
+    streams.elementAt(0).bitrate;
     final audioStream = yt.videos.streamsClient.get(audio);
 
     // final fileName = '${videoMetaData.title}_audio_.${audio.container.name}'
@@ -519,15 +526,13 @@ class _HomeState extends State<Home> {
                                 ),
                                 SizedBox(height: 8.0),
                                 DropdownMenu<String>(
-                                  initialSelection: videoQualities.first,
+                                  initialSelection: videoQualities.last,
                                   onSelected: (String? newValue) {
                                     setState(() {
                                       selectedVideoQuality = newValue;
                                     });
                                   },
-                                  dropdownMenuEntries: videoQualities
-                                      .map<DropdownMenuEntry<String>>(
-                                          (String value) {
+                                  dropdownMenuEntries: videoQualities.map<DropdownMenuEntry<String>>((String value) {
                                     return DropdownMenuEntry<String>(
                                         value: value, label: value);
                                   }).toList(),
@@ -544,15 +549,14 @@ class _HomeState extends State<Home> {
                                 ),
                                 SizedBox(height: 8.0),
                                 DropdownMenu<String>(
-                                  initialSelection: audioMap.keys.last,
+                                  initialSelection: audioOptions.last,
                                   onSelected: (String? newValue) {
                                     setState(() {
                                       selectedAudioQuality = newValue;
+
                                     });
                                   },
-                                  dropdownMenuEntries: audioQualities
-                                      .map<DropdownMenuEntry<String>>(
-                                          (String value) {
+                                  dropdownMenuEntries: audioOptions.map<DropdownMenuEntry<String>>((String value) {
                                     return DropdownMenuEntry<String>(
                                         value: value, label: value);
                                   }).toList(),
@@ -639,10 +643,10 @@ class _HomeState extends State<Home> {
   }
 
   void clearCollections() {
-    audioMap.clear();
+    audioOptions.clear();
     audioSize.clear();
     audioQualities.clear();
-    videoMap.clear();
+    videoOptions.clear();
     videoSize.clear();
     videoQualities.clear();
   }
