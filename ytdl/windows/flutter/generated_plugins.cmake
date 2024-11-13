@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  flutter_desktop_folder_picker
   screen_retriever_windows
   window_manager
 )

@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_desktop_folder_picker/flutter_desktop_folder_picker.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:validator_regex/validator_regex.dart';
 import 'package:clipboard/clipboard.dart';
@@ -13,8 +14,11 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // Code
   final TextEditingController urlText = TextEditingController();
   final yt = YoutubeExplode();
+
+  bool isLoading = false;
 
   List<String> videoQualities = [];
   List<double> videoSize = [];
@@ -172,7 +176,7 @@ class _HomeState extends State<Home> {
                       },
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ],
@@ -183,7 +187,7 @@ class _HomeState extends State<Home> {
 
   Future<void> searchVideo(String url) async {
     // Code
-    Directory('Downloads').createSync();
+    showLoadingDialog(context);
     await getMetaData(url);
   }
 
@@ -208,8 +212,7 @@ class _HomeState extends State<Home> {
     }
   }
 
-  Future<void> getAudioStream(
-      StreamManifest manifest, Video videoMetaData) async {
+  Future<void> getAudioStream(StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the audio track with the highest bitrate.
@@ -238,8 +241,7 @@ class _HomeState extends State<Home> {
     selectedAudioQuality = audioOptions[index];
   }
 
-  Future<void> getVideoStream(
-      StreamManifest manifest, Video videoMetaData) async {
+  Future<void> getVideoStream(StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the video track
@@ -283,7 +285,7 @@ class _HomeState extends State<Home> {
 
     showDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -311,6 +313,7 @@ class _HomeState extends State<Home> {
                                 } else {
                                   clearCollections();
                                   Navigator.of(context).pop();
+                                  Navigator.of(context).pop(); // Close Loading Dialog
                                 }
                               },
                             ),
@@ -331,7 +334,7 @@ class _HomeState extends State<Home> {
                             child: Text(
                               videoMetaData.title,
                               style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
+                                  fontSize: 20, fontWeight: FontWeight.bold, fontFamily: "Poppins"),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -348,7 +351,8 @@ class _HomeState extends State<Home> {
                                       style: TextStyle(
                                           fontSize: 18,
                                           color: Colors.red.shade400,
-                                          fontWeight: FontWeight.w600
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: "Poppins"
                                       ),
                                     ),
                                     SizedBox(height: 8.0),
@@ -377,7 +381,8 @@ class _HomeState extends State<Home> {
                                       style: TextStyle(
                                           fontSize: 18,
                                           color: Colors.red.shade400,
-                                          fontWeight: FontWeight.w600
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: "Poppins"
                                       ),
                                     ),
                                     SizedBox(height: 8.0),
@@ -406,7 +411,11 @@ class _HomeState extends State<Home> {
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Column(
                                 children: [
-                                  Text(displayText, style: TextStyle(fontSize: 16)),
+                                  Text(displayText,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontFamily: "Poppins"
+                                      )),
                                   SizedBox(height: 8.0),
                                   LinearProgressIndicator(
                                     value: progress,
@@ -417,7 +426,11 @@ class _HomeState extends State<Home> {
                                   SizedBox(height: 8.0),
                                   Text(
                                     "${(progress * 100).toStringAsFixed(0)} %",
-                                    style: TextStyle(fontSize: 16),
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: "Poppins"
+                                    ),
                                   ),
                                 ],
                               ),
@@ -435,39 +448,46 @@ class _HomeState extends State<Home> {
                                 ),
                               ),
                               onPressed: () async {
-                                setState(() {
-                                  downloadClicked = true;
-                                  showProgress = true;
-                                });
-                                await downloadAudioTrack(
-                                  videoMetaData,
-                                  (double value) {
-                                    setState(() {
-                                      displayText = "Downloading Audio ...";
-                                      progress = value;
-                                    });
-                                  },
-                                );
-                                setState(() {
-                                  progress = 0.0;
-                                });
-                                await downloadVideoTrack(
-                                  videoMetaData,
-                                      (double value) {
-                                    setState(() {
-                                      displayText = "Downloading Video ...";
-                                      progress = value;
-                                    });
-                                  },
-                                );
-                                setState(() {
-                                  downloadClicked = false;
-                                  showProgress = false;
-                                  progress = 0.0;
-                                });
+                                // setState(() {
+                                //   downloadClicked = true;
+                                //   showProgress = true;
+                                // });
+                                // await downloadAudioTrack(
+                                //   videoMetaData,
+                                //   (double value) {
+                                //     setState(() {
+                                //       displayText = "Downloading Audio ...";
+                                //       progress = value;
+                                //     });
+                                //   },
+                                // );
+                                // setState(() {
+                                //   progress = 0.0;
+                                // });
+                                // await downloadVideoTrack(
+                                //   videoMetaData,
+                                //       (double value) {
+                                //     setState(() {
+                                //       displayText = "Downloading Video ...";
+                                //       progress = value;
+                                //     });
+                                //   },
+                                // );
+                                // setState(() {
+                                //   downloadClicked = false;
+                                //   showProgress = false;
+                                //   progress = 0.0;
+                                // });
+                                String? path = await FlutterDesktopFolderPicker.openFolderPickerDialog();
+                                print(path);
                               },
                               icon: Icon(Icons.download),
-                              label: Text('Download'),
+                              label: Text('Download',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: "Poppins"
+                                ),),
                             ),
                           ),
                         ],
@@ -666,9 +686,8 @@ class _HomeState extends State<Home> {
     var count = 0;
 
     // Create the message and set the cursor position
-    final msg =
-        'Downloading ${videoMetaData.title}.${audioTrack.container.name}';
-    stdout.writeln(msg);
+    // final msg = 'Downloading ${videoMetaData.title}.${audioTrack.container.name}';
+    // stdout.writeln(msg);
 
     // Listen for data received
     await for (final data in audioStream) {
@@ -782,6 +801,39 @@ class _HomeState extends State<Home> {
           ),
         ],
       ),
+    );
+  }
+
+  void showLoadingDialog(BuildContext context) {
+    // Code
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.red.shade400),
+                SizedBox(width: 30.0),
+                Text("Please Wait ...",
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Poppins"
+                  ),
+                  textAlign: TextAlign.center
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
