@@ -449,6 +449,18 @@ class _HomeState extends State<Home> {
                                   },
                                 );
                                 setState(() {
+                                  progress = 0.0;
+                                });
+                                await downloadVideoTrack(
+                                  videoMetaData,
+                                      (double value) {
+                                    setState(() {
+                                      displayText = "Downloading Video ...";
+                                      progress = value;
+                                    });
+                                  },
+                                );
+                                setState(() {
                                   downloadClicked = false;
                                   showProgress = false;
                                   progress = 0.0;
@@ -668,7 +680,7 @@ class _HomeState extends State<Home> {
     await output.close();
   }
 
-  Future<void> downloadVideoTrack(Video videoMetaData) async {
+  Future<void> downloadVideoTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
     // Code
     final selectedVideoAttributes = selectedVideoQuality?.split(" : ");
     final selectedVideoPixels = selectedVideoAttributes!.elementAt(0);
@@ -709,9 +721,8 @@ class _HomeState extends State<Home> {
     var count = 0;
 
     // Create the message and set the cursor position.
-    final msg =
-        'Downloading ${videoMetaData.title}.${videoTrack.container.name}';
-    stdout.writeln(msg);
+    // final msg = 'Downloading ${videoMetaData.title}.${videoTrack.container.name}';
+    // stdout.writeln(msg);
 
     // Listen for data received.
     await for (final data in videoStream) {
@@ -719,20 +730,14 @@ class _HomeState extends State<Home> {
       count += data.length;
 
       // Calculate the current progress.
-      final progress = ((count / len) * 100).ceil();
+      final currentProgress = (count / len);
 
-      print(progress.toStringAsFixed(2));
+      onProgressUpdate(currentProgress);
 
       // Write to file.
       output.add(data);
     }
     await output.close();
-  }
-
-  Future<void> downloadFiles(Video videoMetaData, Function setState) async {
-    // Code
-    // await downloadAudioTrack(videoMetaData, setState);
-    // await downloadVideoTrack(videoMetaData);
   }
 
   void showExitConfirmationDialog(BuildContext context) {
