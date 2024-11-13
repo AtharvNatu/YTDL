@@ -6,7 +6,6 @@ import 'package:validator_regex/validator_regex.dart';
 import 'package:clipboard/clipboard.dart';
 
 class Home extends StatefulWidget {
-
   const Home({super.key});
 
   @override
@@ -21,8 +20,8 @@ class _HomeState extends State<Home> {
   List<double> videoSize = [];
   List<String> videoOptions = [];
 
-  List<double> audioQualities = [];
-  List<double> audioSize = [];
+  List<int> audioQualities = [];
+  List<int> audioSize = [];
   List<String> audioOptions = [];
 
   Map<String, List<double>> videoMap = {};
@@ -163,12 +162,12 @@ class _HomeState extends State<Home> {
                         if (urlText.text.isNotEmpty &&
                             Validator.url(urlText.text)) {
                           searchVideo(urlText.text);
-                        }
-                        else if (urlText.text.isEmpty) {
-                          showAlertDialog(context, "Empty URL ... Please Enter Valid URL !!!");
-                        }
-                        else if (!Validator.url(urlText.text)) {
-                          showAlertDialog(context, "Invalid URL ... Please Enter Valid URL !!!");
+                        } else if (urlText.text.isEmpty) {
+                          showAlertDialog(context,
+                              "Empty URL ... Please Enter Valid URL !!!");
+                        } else if (!Validator.url(urlText.text)) {
+                          showAlertDialog(context,
+                              "Invalid URL ... Please Enter Valid URL !!!");
                         }
                       },
                     ),
@@ -209,29 +208,38 @@ class _HomeState extends State<Home> {
     }
   }
 
-  Future<void> getAudioStream(StreamManifest manifest, Video videoMetaData) async {
+  Future<void> getAudioStream(
+      StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the audio track with the highest bitrate.
     audioStreams = manifest.audioOnly;
 
     for (var streamInfo in audioStreams) {
-      audioQualities.add(streamInfo.bitrate.kiloBitsPerSecond);
-      audioSize.add(streamInfo.size.totalMegaBytes);
+      audioQualities.add(streamInfo.bitrate.kiloBitsPerSecond.ceil());
+      audioSize.add(streamInfo.size.totalMegaBytes.ceil());
     }
 
-    // Sort lists
-    audioSize.sort();
-    audioQualities.sort();
-    
     for (int i = 0; i < audioSize.length; i++) {
-      audioOptions.add("${audioQualities.elementAt(i).toStringAsFixed(1)} Kbps : ${audioSize.elementAt(i).toStringAsFixed(1)} MB");
+      audioOptions.add(
+          "${audioQualities.elementAt(i).toString()} Kbps : ${audioSize.elementAt(i).toString()} MB");
     }
 
-    selectedAudioQuality = audioOptions.last;
+    int index = audioQualities.length;
+    int largestBitrate = 0;
+    for (int i = 0; i < audioQualities.length; i++) {
+      int bitrate = audioQualities[i];
+      if (bitrate > largestBitrate) {
+        largestBitrate = bitrate;
+        index = i;
+      }
+    }
+
+    selectedAudioQuality = audioOptions[index];
   }
 
-  Future<void> getVideoStream(StreamManifest manifest, Video videoMetaData) async {
+  Future<void> getVideoStream(
+      StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the video track
@@ -269,172 +277,368 @@ class _HomeState extends State<Home> {
   void showDownloadDialog(BuildContext context, Video videoMetaData) {
     // Code
     bool downloadClicked = false;
+    bool showProgress = false;
+    double progress = 0.0;
+    String displayText = "";
 
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Stack(
-            children: [
-              SizedBox(
-                width: 600,
-                height: 600,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      // Close Button
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: IconButton(
-                          icon: Icon(Icons.close),
-                          onPressed: () {
-                            if (downloadClicked) {
-                              showExitConfirmationDialog(context);
-                            } else {
-                              clearCollections();
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        ),
-                      ),
-                      // Image Section
-                      Container(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Image.network(
-                          videoMetaData.thumbnails.standardResUrl,
-                          width: 320,
-                          height: 180,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      // Title Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Text(
-                          videoMetaData.title,
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      // Dropdown Menu Section
-                      Expanded(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Video Quality Dropdown
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Select Video Quality",
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                                SizedBox(height: 8.0),
-                                DropdownMenu<String>(
-                                  initialSelection: selectedVideoQuality,
-                                  onSelected: (String? newValue) {
-                                    setState(() {
-                                      selectedVideoQuality = newValue;
-                                    });
-                                  },
-                                  dropdownMenuEntries: videoOptions.map<DropdownMenuEntry<String>>((String value) {
-                                    return DropdownMenuEntry<String>(
-                                        value: value, label: value);
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                            // Audio Quality Dropdown
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Select Audio Quality",
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                                SizedBox(height: 8.0),
-                                DropdownMenu<String>(
-                                  initialSelection: audioOptions.last,
-                                  onSelected: (String? newValue) {
-                                    setState(() {
-                                      selectedAudioQuality = newValue;
-                                    });
-                                  },
-                                  dropdownMenuEntries: audioOptions.map<DropdownMenuEntry<String>>((String value) {
-                                    return DropdownMenuEntry<String>(
-                                        value: value, label: value);
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Download Button Section
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueGrey,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(200, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Stack(
+                children: [
+                  SizedBox(
+                    width: 600,
+                    height: 600,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          // Close Button
+                          Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                              icon: Icon(Icons.close),
+                              onPressed: () {
+                                if (downloadClicked) {
+                                  showExitConfirmationDialog(context);
+                                } else {
+                                  clearCollections();
+                                  Navigator.of(context).pop();
+                                }
+                              },
                             ),
                           ),
-                          onPressed: () async {
-                            downloadClicked = true;
-                            await downloadFiles(videoMetaData);
-                          },
-                          icon: Icon(Icons.download),
-                          label: Text('Download'),
-                        ),
+                          // Image Section
+                          Container(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: Image.network(
+                              videoMetaData.thumbnails.standardResUrl,
+                              width: 320,
+                              height: 180,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          // Title Section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Text(
+                              videoMetaData.title,
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                // Video Quality Dropdown
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Select Video Quality",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.red.shade400,
+                                          fontWeight: FontWeight.w600
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.0),
+                                    DropdownMenu<String>(
+                                      initialSelection: selectedVideoQuality,
+                                      onSelected: (String? newValue) {
+                                        setState(() {
+                                          selectedVideoQuality = newValue;
+                                        });
+                                      },
+                                      dropdownMenuEntries: videoOptions
+                                          .map<DropdownMenuEntry<String>>(
+                                              (String value) {
+                                        return DropdownMenuEntry<String>(
+                                            value: value, label: value);
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                                // Audio Quality Dropdown
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Select Audio Quality",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.red.shade400,
+                                          fontWeight: FontWeight.w600
+                                      ),
+                                    ),
+                                    SizedBox(height: 8.0),
+                                    DropdownMenu<String>(
+                                      initialSelection: selectedAudioQuality,
+                                      onSelected: (String? newValue) {
+                                        setState(() {
+                                          selectedAudioQuality = newValue;
+                                        });
+                                      },
+                                      dropdownMenuEntries: audioOptions
+                                          .map<DropdownMenuEntry<String>>(
+                                              (String value) {
+                                        return DropdownMenuEntry<String>(
+                                            value: value, label: value);
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Progress Bar
+                          if (showProgress)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Column(
+                                children: [
+                                  Text(displayText, style: TextStyle(fontSize: 16)),
+                                  SizedBox(height: 8.0),
+                                  LinearProgressIndicator(
+                                    value: progress,
+                                    minHeight: 15,
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.all(Radius.circular(30))
+                                  ),
+                                  SizedBox(height: 8.0),
+                                  Text(
+                                    "${(progress * 100).toStringAsFixed(0)} %",
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // Download Button Section
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(200, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () async {
+                                setState(() {
+                                  downloadClicked = true;
+                                  showProgress = true;
+                                });
+                                await downloadAudioTrack(
+                                  videoMetaData,
+                                  (double value) {
+                                    setState(() {
+                                      displayText = "Downloading Audio ...";
+                                      progress = value;
+                                    });
+                                  },
+                                );
+                                setState(() {
+                                  downloadClicked = false;
+                                  showProgress = false;
+                                  progress = 0.0;
+                                });
+                              },
+                              icon: Icon(Icons.download),
+                              label: Text('Download'),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
+
+    // showDialog(
+    //   context: context,
+    //   barrierDismissible: true,
+    //   builder: (BuildContext context) {
+    //       return Dialog(
+    //       shape: RoundedRectangleBorder(
+    //         borderRadius: BorderRadius.circular(15),
+    //       ),
+    //       child: Stack(
+    //         children: [
+    //           SizedBox(
+    //             width: 600,
+    //             height: 600,
+    //             child: Padding(
+    //               padding: const EdgeInsets.all(16.0),
+    //               child: Column(
+    //                 children: [
+    //                   // Close Button
+    //                   Align(
+    //                     alignment: Alignment.topRight,
+    //                     child: IconButton(
+    //                       icon: Icon(Icons.close),
+    //                       onPressed: () {
+    //                         if (downloadClicked) {
+    //                           showExitConfirmationDialog(context);
+    //                         } else {
+    //                           clearCollections();
+    //                           Navigator.of(context).pop();
+    //                         }
+    //                       },
+    //                     ),
+    //                   ),
+    //                   // Image Section
+    //                   Container(
+    //                     padding: const EdgeInsets.only(bottom: 16.0),
+    //                     child: Image.network(
+    //                       videoMetaData.thumbnails.standardResUrl,
+    //                       width: 320,
+    //                       height: 180,
+    //                       fit: BoxFit.contain,
+    //                     ),
+    //                   ),
+    //                   // Title Section
+    //                   Padding(
+    //                     padding: const EdgeInsets.symmetric(vertical: 8.0),
+    //                     child: Text(
+    //                       videoMetaData.title,
+    //                       style: TextStyle(
+    //                           fontSize: 20, fontWeight: FontWeight.bold),
+    //                       textAlign: TextAlign.center,
+    //                     ),
+    //                   ),
+    //                   // Dropdown Menu Section
+    //                   Expanded(
+    //                     child: Row(
+    //                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    //                       children: [
+    //                         // Video Quality Dropdown
+    //                         Column(
+    //                           mainAxisAlignment: MainAxisAlignment.center,
+    //                           children: [
+    //                             Text(
+    //                               "Select Video Quality",
+    //                               style: TextStyle(fontSize: 18),
+    //                             ),
+    //                             SizedBox(height: 8.0),
+    //                             DropdownMenu<String>(
+    //                               initialSelection: selectedVideoQuality,
+    //                               onSelected: (String? newValue) {
+    //                                 setState(() {
+    //                                   selectedVideoQuality = newValue;
+    //                                 });
+    //                               },
+    //                               dropdownMenuEntries: videoOptions.map<DropdownMenuEntry<String>>((String value) {
+    //                                 return DropdownMenuEntry<String>(
+    //                                     value: value, label: value);
+    //                               }).toList(),
+    //                             ),
+    //                           ],
+    //                         ),
+    //                         // Audio Quality Dropdown
+    //                         Column(
+    //                           mainAxisAlignment: MainAxisAlignment.center,
+    //                           children: [
+    //                             Text(
+    //                               "Select Audio Quality",
+    //                               style: TextStyle(fontSize: 18),
+    //                             ),
+    //                             SizedBox(height: 8.0),
+    //                             DropdownMenu<String>(
+    //                               initialSelection: selectedAudioQuality,
+    //                               onSelected: (String? newValue) {
+    //                                 setState(() {
+    //                                   selectedAudioQuality = newValue;
+    //                                 });
+    //                               },
+    //                               dropdownMenuEntries: audioOptions.map<DropdownMenuEntry<String>>((String value) {
+    //                                 return DropdownMenuEntry<String>(
+    //                                     value: value, label: value);
+    //                               }).toList(),
+    //                             ),
+    //                           ],
+    //                         ),
+    //                       ],
+    //                     ),
+    //                   ),
+    //                   // Download Button Section
+    //                   Padding(
+    //                     padding: const EdgeInsets.only(top: 16.0),
+    //                     child: ElevatedButton.icon(
+    //                       style: ElevatedButton.styleFrom(
+    //                         backgroundColor: Colors.blueGrey,
+    //                         foregroundColor: Colors.white,
+    //                         minimumSize: const Size(200, 50),
+    //                         shape: RoundedRectangleBorder(
+    //                           borderRadius: BorderRadius.circular(30),
+    //                         ),
+    //                       ),
+    //                       onPressed: () async {
+    //                         downloadClicked = true;
+    //                         await downloadFiles(videoMetaData);
+    //                       },
+    //                       icon: Icon(Icons.download),
+    //                       label: Text('Download'),
+    //                     ),
+    //                   ),
+    //                 ],
+    //               ),
+    //             ),
+    //           ),
+    //         ],
+    //       ),
+    //     );
+    //   },
+    // );
   }
 
-  Future<void> downloadAudioTrack(Video videoMetaData) async {
+  Future<void> downloadAudioTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
     // Code
     final selectedAudioAttributes = selectedAudioQuality?.split(" : ");
-    final selectedAudioBitrateList = selectedAudioAttributes!.elementAt(0).split(" ");
-    final selectedAudioSizeList = selectedAudioAttributes.elementAt(1).split(" ");
+    final selectedAudioBitrateList =
+        selectedAudioAttributes!.elementAt(0).split(" ");
+    final selectedAudioSizeList =
+        selectedAudioAttributes.elementAt(1).split(" ");
 
-    String selectedAudioBitrate = selectedAudioBitrateList.elementAt(0);
-    String selectedAudioSize = selectedAudioSizeList.elementAt(0);
+    int selectedAudioBitrate = int.parse(selectedAudioBitrateList.elementAt(0));
+    int selectedAudioSize = int.parse(selectedAudioSizeList.elementAt(0));
 
     for (var audioStreamOption in audioStreams) {
-      String streamBitrate = audioStreamOption.bitrate.kiloBitsPerSecond.toStringAsFixed(1);
-      String streamSize = audioStreamOption.size.totalMegaBytes.toStringAsFixed(1);
-      if (selectedAudioBitrate == streamBitrate && selectedAudioSize == streamSize) {
+      int streamBitrate = audioStreamOption.bitrate.kiloBitsPerSecond.ceil();
+      int streamSize = audioStreamOption.size.totalMegaBytes.ceil();
+      if (selectedAudioBitrate == streamBitrate &&
+          selectedAudioSize == streamSize) {
         audioTrack = audioStreamOption;
       }
     }
 
     final audioStream = yt.videos.streamsClient.get(audioTrack);
-    final fileName = '${videoMetaData.title}_audio_.${audioTrack.container.name}'
-        .replaceAll(r'\', '')
-        .replaceAll('/', '')
-        .replaceAll('*', '')
-        .replaceAll('?', '')
-        .replaceAll('"', '')
-        .replaceAll('<', '')
-        .replaceAll('>', '')
-        .replaceAll(':', '')
-        .replaceAll('|', '');
+    final fileName =
+        '${videoMetaData.title}_audio_.${audioTrack.container.name}'
+            .replaceAll(r'\', '')
+            .replaceAll('/', '')
+            .replaceAll('*', '')
+            .replaceAll('?', '')
+            .replaceAll('"', '')
+            .replaceAll('<', '')
+            .replaceAll('>', '')
+            .replaceAll(':', '')
+            .replaceAll('|', '');
     final file = File('downloads/$fileName');
 
     // Delete the file if exists.
@@ -442,28 +646,23 @@ class _HomeState extends State<Home> {
       file.deleteSync();
     }
 
-    // Open the file in writeAppend.
+    // Open the file in writeAppend
     final output = file.openWrite(mode: FileMode.writeOnlyAppend);
 
-    // Track the file download status.
+    // Track the file download status
     final len = audioTrack.size.totalBytes;
     var count = 0;
 
-    // Create the message and set the cursor position.
-    final msg = 'Downloading ${videoMetaData.title}.${audioTrack.container.name}';
+    // Create the message and set the cursor position
+    final msg =
+        'Downloading ${videoMetaData.title}.${audioTrack.container.name}';
     stdout.writeln(msg);
 
-    // Listen for data received.
+    // Listen for data received
     await for (final data in audioStream) {
-      // Keep track of the current downloaded data.
       count += data.length;
-
-      // Calculate the current progress.
-      final progress = ((count / len) * 100).ceil();
-
-      print(progress.toStringAsFixed(2));
-
-      // Write to file.
+      final currentProgress = ((count / len));
+      onProgressUpdate(currentProgress);
       output.add(data);
     }
     await output.close();
@@ -476,23 +675,25 @@ class _HomeState extends State<Home> {
     final selectedVideoSize = selectedVideoAttributes.elementAt(1);
 
     for (var videoStreamInfo in videoStreams) {
-      if (selectedVideoPixels == videoStreamInfo.qualityLabel && selectedVideoSize == videoStreamInfo.size.toString()) {
+      if (selectedVideoPixels == videoStreamInfo.qualityLabel &&
+          selectedVideoSize == videoStreamInfo.size.toString()) {
         videoTrack = videoStreamInfo;
       }
     }
 
     final videoStream = yt.videos.streamsClient.get(videoTrack);
 
-    final fileName = '${videoMetaData.title}_video_.${videoTrack.container.name}'
-        .replaceAll(r'\', '')
-        .replaceAll('/', '')
-        .replaceAll('*', '')
-        .replaceAll('?', '')
-        .replaceAll('"', '')
-        .replaceAll('<', '')
-        .replaceAll('>', '')
-        .replaceAll(':', '')
-        .replaceAll('|', '');
+    final fileName =
+        '${videoMetaData.title}_video_.${videoTrack.container.name}'
+            .replaceAll(r'\', '')
+            .replaceAll('/', '')
+            .replaceAll('*', '')
+            .replaceAll('?', '')
+            .replaceAll('"', '')
+            .replaceAll('<', '')
+            .replaceAll('>', '')
+            .replaceAll(':', '')
+            .replaceAll('|', '');
     final file = File('downloads/$fileName');
 
     // Delete the file if exists.
@@ -508,7 +709,8 @@ class _HomeState extends State<Home> {
     var count = 0;
 
     // Create the message and set the cursor position.
-    final msg = 'Downloading ${videoMetaData.title}.${videoTrack.container.name}';
+    final msg =
+        'Downloading ${videoMetaData.title}.${videoTrack.container.name}';
     stdout.writeln(msg);
 
     // Listen for data received.
@@ -527,10 +729,10 @@ class _HomeState extends State<Home> {
     await output.close();
   }
 
-  Future<void> downloadFiles(Video videoMetaData) async {
+  Future<void> downloadFiles(Video videoMetaData, Function setState) async {
     // Code
-    await downloadAudioTrack(videoMetaData);
-    await downloadVideoTrack(videoMetaData);
+    // await downloadAudioTrack(videoMetaData, setState);
+    // await downloadVideoTrack(videoMetaData);
   }
 
   void showExitConfirmationDialog(BuildContext context) {
