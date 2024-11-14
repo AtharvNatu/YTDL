@@ -1,10 +1,11 @@
 import 'dart:collection';
 import 'dart:io';
+import 'package:filepicker_windows/filepicker_windows.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_desktop_folder_picker/flutter_desktop_folder_picker.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:validator_regex/validator_regex.dart';
 import 'package:clipboard/clipboard.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -448,38 +449,42 @@ class _HomeState extends State<Home> {
                                 ),
                               ),
                               onPressed: () async {
-                                // setState(() {
-                                //   downloadClicked = true;
-                                //   showProgress = true;
-                                // });
-                                // await downloadAudioTrack(
-                                //   videoMetaData,
-                                //   (double value) {
-                                //     setState(() {
-                                //       displayText = "Downloading Audio ...";
-                                //       progress = value;
-                                //     });
-                                //   },
-                                // );
-                                // setState(() {
-                                //   progress = 0.0;
-                                // });
-                                // await downloadVideoTrack(
-                                //   videoMetaData,
-                                //       (double value) {
-                                //     setState(() {
-                                //       displayText = "Downloading Video ...";
-                                //       progress = value;
-                                //     });
-                                //   },
-                                // );
-                                // setState(() {
-                                //   downloadClicked = false;
-                                //   showProgress = false;
-                                //   progress = 0.0;
-                                // });
-                                String? path = await FlutterDesktopFolderPicker.openFolderPickerDialog();
-                                print(path);
+
+                                String? directoryPath = openDirectoryPicker("Select Directory To Download");
+
+                                setState(() {
+                                  downloadClicked = true;
+                                  showProgress = true;
+                                });
+                                await downloadAudioTrack(
+                                  videoMetaData,
+                                  directoryPath,
+                                  (double value) {
+                                    setState(() {
+                                      displayText = "Downloading Audio ...";
+                                      progress = value;
+                                    });
+                                  },
+                                );
+                                setState(() {
+                                  progress = 0.0;
+                                });
+                                await downloadVideoTrack(
+                                  videoMetaData,
+                                  directoryPath,
+                                  (double value) {
+                                    setState(() {
+                                      displayText = "Downloading Video ...";
+                                      progress = value;
+                                    });
+                                  },
+                                );
+                                setState(() {
+                                  downloadClicked = false;
+                                  showProgress = false;
+                                  progress = 0.0;
+                                });
+
                               },
                               icon: Icon(Icons.download),
                               label: Text('Download',
@@ -639,7 +644,7 @@ class _HomeState extends State<Home> {
     // );
   }
 
-  Future<void> downloadAudioTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
+  Future<void> downloadAudioTrack(Video videoMetaData, String? directoryPath, Function(double) onProgressUpdate) async {
     // Code
     final selectedAudioAttributes = selectedAudioQuality?.split(" : ");
     final selectedAudioBitrateList =
@@ -671,35 +676,27 @@ class _HomeState extends State<Home> {
             .replaceAll('>', '')
             .replaceAll(':', '')
             .replaceAll('|', '');
-    final file = File('downloads/$fileName');
 
-    // Delete the file if exists.
+    final file = File('$directoryPath/$fileName');
     if (file.existsSync()) {
       file.deleteSync();
     }
 
-    // Open the file in writeAppend
     final output = file.openWrite(mode: FileMode.writeOnlyAppend);
-
-    // Track the file download status
     final len = audioTrack.size.totalBytes;
     var count = 0;
 
-    // Create the message and set the cursor position
-    // final msg = 'Downloading ${videoMetaData.title}.${audioTrack.container.name}';
-    // stdout.writeln(msg);
-
-    // Listen for data received
     await for (final data in audioStream) {
       count += data.length;
       final currentProgress = ((count / len));
       onProgressUpdate(currentProgress);
       output.add(data);
     }
+
     await output.close();
   }
 
-  Future<void> downloadVideoTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
+  Future<void> downloadVideoTrack(Video videoMetaData, String? directoryPath, Function(double) onProgressUpdate) async {
     // Code
     final selectedVideoAttributes = selectedVideoQuality?.split(" : ");
     final selectedVideoPixels = selectedVideoAttributes!.elementAt(0);
@@ -713,7 +710,6 @@ class _HomeState extends State<Home> {
     }
 
     final videoStream = yt.videos.streamsClient.get(videoTrack);
-
     final fileName =
         '${videoMetaData.title}_video_.${videoTrack.container.name}'
             .replaceAll(r'\', '')
@@ -725,37 +721,23 @@ class _HomeState extends State<Home> {
             .replaceAll('>', '')
             .replaceAll(':', '')
             .replaceAll('|', '');
-    final file = File('downloads/$fileName');
 
-    // Delete the file if exists.
+    final file = File('$directoryPath/$fileName');
     if (file.existsSync()) {
       file.deleteSync();
     }
 
-    // Open the file in writeAppend.
     final output = file.openWrite(mode: FileMode.writeOnlyAppend);
-
-    // Track the file download status.
     final len = videoTrack.size.totalBytes;
     var count = 0;
 
-    // Create the message and set the cursor position.
-    // final msg = 'Downloading ${videoMetaData.title}.${videoTrack.container.name}';
-    // stdout.writeln(msg);
-
-    // Listen for data received.
     await for (final data in videoStream) {
-      // Keep track of the current downloaded data.
       count += data.length;
-
-      // Calculate the current progress.
       final currentProgress = (count / len);
-
       onProgressUpdate(currentProgress);
-
-      // Write to file.
       output.add(data);
     }
+
     await output.close();
   }
 
@@ -835,6 +817,19 @@ class _HomeState extends State<Home> {
         );
       },
     );
+  }
+
+  String? openDirectoryPicker(String title) {
+    // Code
+    String? path;
+
+    DirectoryPicker picker = DirectoryPicker();
+    picker.title = title;
+    Directory? directory = picker.getDirectory();
+    if (directory != null) {
+      path = directory.path;
+    }
+    return path;
   }
 
   void clearCollections() {
