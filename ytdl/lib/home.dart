@@ -5,7 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:validator_regex/validator_regex.dart';
 import 'package:clipboard/clipboard.dart';
+import 'package:path_provider/path_provider.dart';
 
+enum LoadingState {
+  initial,
+  audio,
+  video,
+  mux
+}
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -18,8 +25,6 @@ class _HomeState extends State<Home> {
   // Code
   final TextEditingController urlText = TextEditingController();
   final yt = YoutubeExplode();
-
-  bool isLoading = false;
 
   List<String> videoQualities = [];
   List<double> videoSize = [];
@@ -37,8 +42,14 @@ class _HomeState extends State<Home> {
   late UnmodifiableListView<VideoOnlyStreamInfo> videoStreams;
   late VideoOnlyStreamInfo videoTrack;
 
+  late File audioFile, videoFile;
+
   String? selectedVideoQuality = "";
   String? selectedAudioQuality = "";
+  String? directoryPath = "";
+  String? audioFileName = "";
+  String? videoFileName = "";
+  String? outputFileName = "";
 
   @override
   void initState() {
@@ -220,8 +231,10 @@ class _HomeState extends State<Home> {
     audioStreams = manifest.audioOnly;
 
     for (var streamInfo in audioStreams) {
-      audioQualities.add(streamInfo.bitrate.kiloBitsPerSecond.ceil());
-      audioSize.add(streamInfo.size.totalMegaBytes.ceil());
+      if (streamInfo.codec.subtype != "webm") {
+        audioQualities.add(streamInfo.bitrate.kiloBitsPerSecond.ceil());
+        audioSize.add(streamInfo.size.totalMegaBytes.ceil());
+      }
     }
 
     for (int i = 0; i < audioSize.length; i++) {
@@ -253,7 +266,7 @@ class _HomeState extends State<Home> {
     videoOptions.clear();
 
     for (var streamInfo in videoStreams) {
-      if (streamInfo.qualityLabel != "144p") {
+      if (streamInfo.qualityLabel != "144p" && streamInfo.codec.subtype != "webm") {
         videoQualities.add(streamInfo.qualityLabel);
         videoSize.add(streamInfo.size.totalMegaBytes);
         String tempStr = "${streamInfo.qualityLabel} : ${streamInfo.size}";
@@ -282,6 +295,7 @@ class _HomeState extends State<Home> {
     bool downloadClicked = false;
     bool showProgress = false;
     double progress = 0.0;
+    LoadingState loadingState = LoadingState.initial;
     String displayText = "";
 
     showDialog(
@@ -310,7 +324,8 @@ class _HomeState extends State<Home> {
                               icon: Icon(Icons.close),
                               onPressed: () {
                                 if (downloadClicked) {
-                                  showExitConfirmationDialog(context);
+                                  null;
+                                  // showExitConfirmationDialog(context);
                                 } else {
                                   clearCollections();
                                   Navigator.of(context).pop();
@@ -409,29 +424,50 @@ class _HomeState extends State<Home> {
                           // Progress Bar
                           if (showProgress)
                             Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(vertical: 6.0),
                               child: Column(
                                 children: [
                                   Text(displayText,
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontFamily: "Poppins"
-                                      )),
-                                  SizedBox(height: 8.0),
-                                  LinearProgressIndicator(
-                                    value: progress,
-                                    minHeight: 15,
-                                    color: Colors.green,
-                                    borderRadius: BorderRadius.all(Radius.circular(30))
-                                  ),
-                                  SizedBox(height: 8.0),
-                                  Text(
-                                    "${(progress * 100).toStringAsFixed(0)} %",
                                     style: TextStyle(
-                                        fontSize: 16,
+                                        fontSize: 17,
+                                        fontFamily: "Poppins",
                                         fontWeight: FontWeight.w600,
-                                        fontFamily: "Poppins"
-                                    ),
+                                    )),
+                                  SizedBox(height: 8.0),
+                                  Builder(
+                                  builder: (context) {
+                                    switch(loadingState) {
+
+                                      // For Audio and Video
+                                      case LoadingState.audio:
+                                      case LoadingState.video:
+                                        return Column(
+                                          children: [
+                                            LinearProgressIndicator(
+                                                value: progress,
+                                                minHeight: 15,
+                                                color: Colors.green,
+                                                borderRadius: BorderRadius.all(Radius.circular(30))
+                                            ),
+                                            SizedBox(height: 8.0),
+                                            Text(
+                                              "${(progress * 100).toStringAsFixed(0)} %",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily: "Poppins"
+                                              ),
+                                            ),
+                                          ],
+                                        );
+
+                                      case LoadingState.mux:
+                                        return CircularProgressIndicator(color: Colors.red.shade400);
+
+                                      default:
+                                        return Container();
+                                    }
+                                  },
                                   ),
                                 ],
                               ),
@@ -450,15 +486,16 @@ class _HomeState extends State<Home> {
                               ),
                               onPressed: () async {
 
-                                String? directoryPath = openDirectoryPicker("Select Directory To Download");
+                                directoryPath = openDirectoryPicker("Select Directory To Download");
 
                                 setState(() {
                                   downloadClicked = true;
                                   showProgress = true;
+                                  loadingState = LoadingState.audio;
                                 });
+
                                 await downloadAudioTrack(
                                   videoMetaData,
-                                  directoryPath,
                                   (double value) {
                                     setState(() {
                                       displayText = "Downloading Audio ...";
@@ -466,12 +503,14 @@ class _HomeState extends State<Home> {
                                     });
                                   },
                                 );
+
                                 setState(() {
                                   progress = 0.0;
+                                  loadingState = LoadingState.video;
                                 });
+
                                 await downloadVideoTrack(
                                   videoMetaData,
-                                  directoryPath,
                                   (double value) {
                                     setState(() {
                                       displayText = "Downloading Video ...";
@@ -479,10 +518,18 @@ class _HomeState extends State<Home> {
                                     });
                                   },
                                 );
+
+                                setState(() {
+                                  displayText = "Processing ...";
+                                  loadingState = LoadingState.mux;
+                                });
+
+                                await processVideo(context);
+
                                 setState(() {
                                   downloadClicked = false;
-                                  showProgress = false;
                                   progress = 0.0;
+                                  showProgress = false;
                                 });
 
                               },
@@ -644,7 +691,7 @@ class _HomeState extends State<Home> {
     // );
   }
 
-  Future<void> downloadAudioTrack(Video videoMetaData, String? directoryPath, Function(double) onProgressUpdate) async {
+  Future<void> downloadAudioTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
     // Code
     final selectedAudioAttributes = selectedAudioQuality?.split(" : ");
     final selectedAudioBitrateList =
@@ -661,28 +708,39 @@ class _HomeState extends State<Home> {
       if (selectedAudioBitrate == streamBitrate &&
           selectedAudioSize == streamSize) {
         audioTrack = audioStreamOption;
+        break;
       }
     }
 
     final audioStream = yt.videos.streamsClient.get(audioTrack);
-    final fileName =
-        '${videoMetaData.title}_audio_.${audioTrack.container.name}'
-            .replaceAll(r'\', '')
-            .replaceAll('/', '')
-            .replaceAll('*', '')
-            .replaceAll('?', '')
-            .replaceAll('"', '')
-            .replaceAll('<', '')
-            .replaceAll('>', '')
-            .replaceAll(':', '')
-            .replaceAll('|', '');
+    audioFileName = '${videoMetaData.title}_audio_.${audioTrack.container.name}'
+        .replaceAll(r'\', '_')
+        .replaceAll('/', '_')
+        .replaceAll('*', '_')
+        .replaceAll('?', '_')
+        .replaceAll('"', '_')
+        .replaceAll('<', '_')
+        .replaceAll('>', '_')
+        .replaceAll(':', '_')
+        .replaceAll('|', '_');
 
-    final file = File('$directoryPath/$fileName');
-    if (file.existsSync()) {
-      file.deleteSync();
+    outputFileName = '${videoMetaData.title}.${audioTrack.container.name}'
+        .replaceAll(r'\', '_')
+        .replaceAll('/', '_')
+        .replaceAll('*', '_')
+        .replaceAll('?', '_')
+        .replaceAll('"', '_')
+        .replaceAll('<', '_')
+        .replaceAll('>', '_')
+        .replaceAll(':', '_')
+        .replaceAll('|', '_');
+
+    audioFile = File('$directoryPath/$audioFileName');
+    if (audioFile.existsSync()) {
+      audioFile.deleteSync();
     }
 
-    final output = file.openWrite(mode: FileMode.writeOnlyAppend);
+    final output = audioFile.openWrite(mode: FileMode.writeOnlyAppend);
     final len = audioTrack.size.totalBytes;
     var count = 0;
 
@@ -696,7 +754,7 @@ class _HomeState extends State<Home> {
     await output.close();
   }
 
-  Future<void> downloadVideoTrack(Video videoMetaData, String? directoryPath, Function(double) onProgressUpdate) async {
+  Future<void> downloadVideoTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
     // Code
     final selectedVideoAttributes = selectedVideoQuality?.split(" : ");
     final selectedVideoPixels = selectedVideoAttributes!.elementAt(0);
@@ -706,28 +764,28 @@ class _HomeState extends State<Home> {
       if (selectedVideoPixels == videoStreamInfo.qualityLabel &&
           selectedVideoSize == videoStreamInfo.size.toString()) {
         videoTrack = videoStreamInfo;
+        break;
       }
     }
 
     final videoStream = yt.videos.streamsClient.get(videoTrack);
-    final fileName =
-        '${videoMetaData.title}_video_.${videoTrack.container.name}'
-            .replaceAll(r'\', '')
-            .replaceAll('/', '')
-            .replaceAll('*', '')
-            .replaceAll('?', '')
-            .replaceAll('"', '')
-            .replaceAll('<', '')
-            .replaceAll('>', '')
-            .replaceAll(':', '')
-            .replaceAll('|', '');
+    videoFileName = '${videoMetaData.title}_video_.${videoTrack.container.name}'
+            .replaceAll(r'\', '_')
+            .replaceAll('/', '_')
+            .replaceAll('*', '_')
+            .replaceAll('?', '_')
+            .replaceAll('"', '_')
+            .replaceAll('<', '_')
+            .replaceAll('>', '_')
+            .replaceAll(':', '_')
+            .replaceAll('|', '_');
 
-    final file = File('$directoryPath/$fileName');
-    if (file.existsSync()) {
-      file.deleteSync();
+    videoFile = File('$directoryPath/$videoFileName');
+    if (videoFile.existsSync()) {
+      videoFile.deleteSync();
     }
 
-    final output = file.openWrite(mode: FileMode.writeOnlyAppend);
+    final output = videoFile.openWrite(mode: FileMode.writeOnlyAppend);
     final len = videoTrack.size.totalBytes;
     var count = 0;
 
@@ -739,6 +797,53 @@ class _HomeState extends State<Home> {
     }
 
     await output.close();
+  }
+
+  Future<void> processVideo(BuildContext context) async {
+    // Code
+    final inputAudioStream = audioFile.absolute.path;
+    final inputVideoStream = videoFile.absolute.path;
+    final outputStream = "${videoFile.parent.absolute.path}/${outputFileName!}";
+
+    final temp = File(outputStream);
+    if (temp.existsSync()) {
+      temp.deleteSync();
+    }
+
+    final arguments = [
+      '-i', inputVideoStream,
+      '-i', inputAudioStream,
+      '-c:v', 'copy',
+      '-c:a', 'aac',
+      outputStream,
+    ];
+
+    final process = await Process.start("ffmpeg.exe", arguments, runInShell: true);
+
+    // Write to Log File
+    Directory appDocsDir = await getApplicationDocumentsDirectory();
+    String appDirPath = appDocsDir.path;
+    final logFile = File('$appDirPath\\YTDL.log');
+    final logSink = logFile.openWrite();
+    process.stdout.transform(SystemEncoding().decoder).listen((data) {
+      logSink.write(data);
+    });
+    process.stderr.transform(SystemEncoding().decoder).listen((data) {
+      logSink.write(data);
+    });
+
+    final exitCode = await process.exitCode;
+    if (exitCode == 0) {
+      showMsgDialog(context, "Processing Finished Successfully ...");
+      videoFile.deleteSync();
+      audioFile.deleteSync();
+    }
+    else {
+      showAlertDialog(context, "Failed To Process Video !!!");
+    }
+
+    await logSink.close();
+
   }
 
   void showExitConfirmationDialog(BuildContext context) {
@@ -760,6 +865,7 @@ class _HomeState extends State<Home> {
               onPressed: () {
                 Navigator.of(context).pop(); // Close confirmation dialog
                 Navigator.of(context).pop(); // Close main dialog
+                Navigator.of(context).pop(); // Close loading dialog
               },
               child: Text("Yes"),
             ),
@@ -774,13 +880,60 @@ class _HomeState extends State<Home> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(errMsg),
+        title: const Text('Error', style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            fontFamily: "Poppins",
+            color: Colors.red
+        ),),
+        content: Text(errMsg, style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Poppins"
+        ),),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.pop(context, 'OK'),
-            child: const Text('OK'),
+            autofocus: true,
+            onPressed: () => Navigator.pop(context, 'Ok'),
+            child: const Text('Ok', style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                fontFamily: "Poppins",
+                color: Colors.black
+            ),),
           ),
+        ],
+      ),
+    );
+  }
+
+  void showMsgDialog(BuildContext context, String msg) {
+    // Code
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Video Status', style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            fontFamily: "Poppins",
+            color: Colors.green
+        ),),
+        content: Text(msg, style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Poppins"
+        ),),
+        actions: <Widget>[
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(context, 'Ok'),
+            child: const Text('Ok', style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              fontFamily: "Poppins",
+              color: Colors.black
+            ),
+          ),)
         ],
       ),
     );
@@ -844,6 +997,7 @@ class _HomeState extends State<Home> {
   @override
   void dispose() {
     urlText.dispose();
+    yt.close();
     super.dispose();
   }
 }
