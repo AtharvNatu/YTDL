@@ -14,6 +14,11 @@ enum LoadingState {
   mux
 }
 
+enum DownloadType {
+  single,
+  playlist
+}
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -50,6 +55,11 @@ class _HomeState extends State<Home> {
   String? audioFileName = "";
   String? videoFileName = "";
   String? outputFileName = "";
+
+  DownloadType downloadType = DownloadType.playlist;
+
+  int playlistVideoCount = 0;
+  late String playlistTitle, playlistAuthor;
 
   @override
   void initState() {
@@ -200,16 +210,21 @@ class _HomeState extends State<Home> {
   Future<void> searchVideo(String url) async {
     // Code
     showLoadingDialog(context);
-    await getMetaData(url);
+    switch(downloadType) {
+      case DownloadType.single:
+        await getVideoMetaData(url);
+      case DownloadType.playlist:
+        await getPlaylistMetaData(url);
+    }
   }
 
-  Future<void> getMetaData(String id) async {
+  Future<void> getVideoMetaData(String id) async {
     // Code
     try {
-      // Get video metadata.
+      // Get video metadata
       final video = await yt.videos.get(id);
 
-      // Get the video manifest.
+      // Get the video manifest
       final manifest = await yt.videos.streamsClient.getManifest(id);
 
       clearCollections();
@@ -219,6 +234,26 @@ class _HomeState extends State<Home> {
       await getVideoStream(manifest, video);
 
       showDownloadDialog(context, video);
+    } catch (error) {
+      showAlertDialog(context, error.toString());
+    }
+  }
+
+  Future<void> getPlaylistMetaData(String id) async {
+    // Code
+    try {
+      var playlist = await yt.playlists.get(id);
+
+      playlistTitle = playlist.title;
+      playlistAuthor = playlist.author;
+      playlistVideoCount = playlist.videoCount!;
+
+      var playListVideos = yt.playlists.getVideos(playlist.id);
+      await for (var video in playListVideos) {
+        print(video.url);
+      }
+
+
     } catch (error) {
       showAlertDialog(context, error.toString());
     }
@@ -366,7 +401,7 @@ class _HomeState extends State<Home> {
                                       "Select Video Quality",
                                       style: TextStyle(
                                           fontSize: 18,
-                                          color: Colors.red.shade400,
+                                          color: Colors.blueGrey,
                                           fontWeight: FontWeight.w600,
                                           fontFamily: "Poppins"
                                       ),
@@ -396,7 +431,7 @@ class _HomeState extends State<Home> {
                                       "Select Audio Quality",
                                       style: TextStyle(
                                           fontSize: 18,
-                                          color: Colors.red.shade400,
+                                          color: Colors.blueGrey,
                                           fontWeight: FontWeight.w600,
                                           fontFamily: "Poppins"
                                       ),
@@ -553,142 +588,6 @@ class _HomeState extends State<Home> {
         );
       },
     );
-
-    // showDialog(
-    //   context: context,
-    //   barrierDismissible: true,
-    //   builder: (BuildContext context) {
-    //       return Dialog(
-    //       shape: RoundedRectangleBorder(
-    //         borderRadius: BorderRadius.circular(15),
-    //       ),
-    //       child: Stack(
-    //         children: [
-    //           SizedBox(
-    //             width: 600,
-    //             height: 600,
-    //             child: Padding(
-    //               padding: const EdgeInsets.all(16.0),
-    //               child: Column(
-    //                 children: [
-    //                   // Close Button
-    //                   Align(
-    //                     alignment: Alignment.topRight,
-    //                     child: IconButton(
-    //                       icon: Icon(Icons.close),
-    //                       onPressed: () {
-    //                         if (downloadClicked) {
-    //                           showExitConfirmationDialog(context);
-    //                         } else {
-    //                           clearCollections();
-    //                           Navigator.of(context).pop();
-    //                         }
-    //                       },
-    //                     ),
-    //                   ),
-    //                   // Image Section
-    //                   Container(
-    //                     padding: const EdgeInsets.only(bottom: 16.0),
-    //                     child: Image.network(
-    //                       videoMetaData.thumbnails.standardResUrl,
-    //                       width: 320,
-    //                       height: 180,
-    //                       fit: BoxFit.contain,
-    //                     ),
-    //                   ),
-    //                   // Title Section
-    //                   Padding(
-    //                     padding: const EdgeInsets.symmetric(vertical: 8.0),
-    //                     child: Text(
-    //                       videoMetaData.title,
-    //                       style: TextStyle(
-    //                           fontSize: 20, fontWeight: FontWeight.bold),
-    //                       textAlign: TextAlign.center,
-    //                     ),
-    //                   ),
-    //                   // Dropdown Menu Section
-    //                   Expanded(
-    //                     child: Row(
-    //                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-    //                       children: [
-    //                         // Video Quality Dropdown
-    //                         Column(
-    //                           mainAxisAlignment: MainAxisAlignment.center,
-    //                           children: [
-    //                             Text(
-    //                               "Select Video Quality",
-    //                               style: TextStyle(fontSize: 18),
-    //                             ),
-    //                             SizedBox(height: 8.0),
-    //                             DropdownMenu<String>(
-    //                               initialSelection: selectedVideoQuality,
-    //                               onSelected: (String? newValue) {
-    //                                 setState(() {
-    //                                   selectedVideoQuality = newValue;
-    //                                 });
-    //                               },
-    //                               dropdownMenuEntries: videoOptions.map<DropdownMenuEntry<String>>((String value) {
-    //                                 return DropdownMenuEntry<String>(
-    //                                     value: value, label: value);
-    //                               }).toList(),
-    //                             ),
-    //                           ],
-    //                         ),
-    //                         // Audio Quality Dropdown
-    //                         Column(
-    //                           mainAxisAlignment: MainAxisAlignment.center,
-    //                           children: [
-    //                             Text(
-    //                               "Select Audio Quality",
-    //                               style: TextStyle(fontSize: 18),
-    //                             ),
-    //                             SizedBox(height: 8.0),
-    //                             DropdownMenu<String>(
-    //                               initialSelection: selectedAudioQuality,
-    //                               onSelected: (String? newValue) {
-    //                                 setState(() {
-    //                                   selectedAudioQuality = newValue;
-    //                                 });
-    //                               },
-    //                               dropdownMenuEntries: audioOptions.map<DropdownMenuEntry<String>>((String value) {
-    //                                 return DropdownMenuEntry<String>(
-    //                                     value: value, label: value);
-    //                               }).toList(),
-    //                             ),
-    //                           ],
-    //                         ),
-    //                       ],
-    //                     ),
-    //                   ),
-    //                   // Download Button Section
-    //                   Padding(
-    //                     padding: const EdgeInsets.only(top: 16.0),
-    //                     child: ElevatedButton.icon(
-    //                       style: ElevatedButton.styleFrom(
-    //                         backgroundColor: Colors.blueGrey,
-    //                         foregroundColor: Colors.white,
-    //                         minimumSize: const Size(200, 50),
-    //                         shape: RoundedRectangleBorder(
-    //                           borderRadius: BorderRadius.circular(30),
-    //                         ),
-    //                       ),
-    //                       onPressed: () async {
-    //                         downloadClicked = true;
-    //                         await downloadFiles(videoMetaData);
-    //                       },
-    //                       icon: Icon(Icons.download),
-    //                       label: Text('Download'),
-    //                     ),
-    //                   ),
-    //                 ],
-    //               ),
-    //             ),
-    //           ),
-    //         ],
-    //       ),
-    //     );
-    //   },
-    // );
   }
 
   Future<void> downloadAudioTrack(Video videoMetaData, Function(double) onProgressUpdate) async {
@@ -843,7 +742,6 @@ class _HomeState extends State<Home> {
     }
 
     await logSink.close();
-
   }
 
   void showExitConfirmationDialog(BuildContext context) {
@@ -894,7 +792,10 @@ class _HomeState extends State<Home> {
         actions: <Widget>[
           TextButton(
             autofocus: true,
-            onPressed: () => Navigator.pop(context, 'Ok'),
+            onPressed: () => {
+              Navigator.pop(context, 'Ok'),
+              Navigator.of(context).pop()
+            },
             child: const Text('Ok', style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
@@ -954,7 +855,7 @@ class _HomeState extends State<Home> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: Colors.red.shade400),
+                CircularProgressIndicator(color: Colors.blueGrey),
                 SizedBox(width: 30.0),
                 Text("Please Wait ...",
                   style: TextStyle(
