@@ -6,10 +6,19 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:validator_regex/validator_regex.dart';
 import 'package:clipboard/clipboard.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:ytdl/list_item.dart';
 
-enum LoadingState { initial, audio, video, mux }
+enum LoadingState {
+  initial,
+  audio,
+  video,
+  mux
+}
 
-enum DownloadType { single, playlist }
+enum DownloadType {
+  single,
+  playlist
+}
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -21,8 +30,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   // Code
   final TextEditingController urlText = TextEditingController();
-  bool isUrlEntered = false;
   final yt = YoutubeExplode();
+  final ScrollController _scrollController = ScrollController();
 
   List<String> videoQualities = [];
   List<double> videoSize = [];
@@ -32,40 +41,34 @@ class _HomeState extends State<Home> {
   List<int> audioSize = [];
   List<String> audioOptions = [];
 
-  Map<String, List<double>> videoMap = {};
-
   late UnmodifiableListView<AudioOnlyStreamInfo> audioStreams;
   late AudioOnlyStreamInfo audioTrack;
 
   late UnmodifiableListView<VideoOnlyStreamInfo> videoStreams;
   late VideoOnlyStreamInfo videoTrack;
 
+  late Stream<Video> playlistVideos;
+
   late File audioFile, videoFile;
 
   String? selectedVideoQuality = "";
   String? selectedAudioQuality = "";
-  String directoryPath = "";
+  String? directoryPath = "";
   String? audioFileName = "";
   String? videoFileName = "";
   String? outputFileName = "";
 
-  late DownloadType downloadType;
+  DownloadType downloadType = DownloadType.playlist;
+  late List<Item> items;
 
   int playlistVideoCount = 0;
   late String playlistTitle, playlistAuthor;
-  List<String> selectedVideoQualities = [];
-  List<String> selectedAudioQualities = [];
-  List<List<String>> playlistAudioOptions = [], playlistVideoOptions = [];
+  bool areAllSelected = true;
+
 
   @override
   void initState() {
     super.initState();
-    urlText.addListener(() {
-      final isUrlEntered = urlText.text.isNotEmpty;
-      setState(() {
-        this.isUrlEntered = isUrlEntered;
-      });
-    });
   }
 
   @override
@@ -74,6 +77,17 @@ class _HomeState extends State<Home> {
       borderSide: BorderSide(color: Colors.black, width: 1.5),
       borderRadius: BorderRadius.all(Radius.circular(30)),
     );
+
+    items = List.generate(30, (index) {
+      return Item(
+        title: 'Video $index',
+        videoOptions: ['Video 1', 'Video 2', 'Video 3'],
+        audioOptions: ['Audio 1', 'Audio 2', 'Audio 3'],
+        selectedVideo: 'Video 1',
+        selectedAudio: 'Audio 1',
+        isChecked: false,
+      );
+    });
 
     return Scaffold(
       body: Center(
@@ -186,22 +200,18 @@ class _HomeState extends State<Home> {
                       ),
                       label: const Text("Search Video"),
                       icon: const Icon(Icons.search),
-                      onPressed: isUrlEntered
-                          ? () {
-                              setState(() {
-                                isUrlEntered = false;
-                              });
-                              if (urlText.text.isNotEmpty &&
-                                  Validator.url(urlText.text)) {
-                                searchVideo(urlText.text);
-                              } else {
-                                showAlertDialog(
-                                  context,
-                                  "Invalid URL ... Please Enter Valid URL !!!",
-                                );
-                              }
-                            }
-                          : null,
+                      onPressed: () {
+                        if (urlText.text.isNotEmpty &&
+                            Validator.url(urlText.text)) {
+                          searchVideo(urlText.text);
+                        } else if (urlText.text.isEmpty) {
+                          showAlertDialog(context,
+                              "Empty URL ... Please Enter Valid URL !!!");
+                        } else if (!Validator.url(urlText.text)) {
+                          showAlertDialog(context,
+                              "Invalid URL ... Please Enter Valid URL !!!");
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -216,14 +226,7 @@ class _HomeState extends State<Home> {
   Future<void> searchVideo(String url) async {
     // Code
     showLoadingDialog(context);
-
-    if (url.contains("playlist")) {
-      downloadType = DownloadType.playlist;
-    } else {
-      downloadType = DownloadType.single;
-    }
-
-    switch (downloadType) {
+    switch(downloadType) {
       case DownloadType.single:
         await getVideoMetaData(url);
       case DownloadType.playlist:
@@ -253,38 +256,20 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> getPlaylistMetaData(String id) async {
-
-    // Variable Declarations
-    List<Video> playlistVideos = [];
-
     // Code
     try {
       var playlist = await yt.playlists.get(id);
-
       playlistTitle = playlist.title;
       playlistAuthor = playlist.author;
       playlistVideoCount = playlist.videoCount!;
-
-      selectedAudioQualities.clear();
-      selectedVideoQualities.clear();
-
-      await for (var video in yt.playlists.getVideos(playlist.id)) {
-        playlistVideos.add(video);
-        var manifest = await yt.videos.streamsClient.getManifest(video.id);
-        clearCollections();
-        await getAudioStream(manifest, video);
-        await getVideoStream(manifest, video);
-      }
-
-      showDownloadPlaylistDialog(context, playlistVideos);
-
+      playlistVideos = yt.playlists.getVideos(playlist.id);
+      showDownloadPlaylistDialog(context);
     } catch (error) {
       showAlertDialog(context, error.toString());
     }
   }
 
-  Future<void> getAudioStream(StreamManifest manifest, Video videoMetaData) async
-  {
+  Future<void> getAudioStream(StreamManifest manifest, Video videoMetaData) async {
     // Code
 
     // Get the audio track with the highest bitrate.
@@ -311,14 +296,8 @@ class _HomeState extends State<Home> {
         index = i;
       }
     }
-    if (downloadType == DownloadType.single) {
-      selectedAudioQuality = audioOptions[index];
-    }
-    else {
-      selectedAudioQualities.add(audioOptions.elementAt(index));
-      playlistAudioOptions.add(audioOptions);
-    }
 
+    selectedAudioQuality = audioOptions[index];
   }
 
   Future<void> getVideoStream(StreamManifest manifest, Video videoMetaData) async {
@@ -332,8 +311,7 @@ class _HomeState extends State<Home> {
     videoOptions.clear();
 
     for (var streamInfo in videoStreams) {
-      if (streamInfo.qualityLabel != "144p" &&
-          streamInfo.codec.subtype != "webm") {
+      if (streamInfo.qualityLabel != "144p" && streamInfo.codec.subtype != "webm") {
         videoQualities.add(streamInfo.qualityLabel);
         videoSize.add(streamInfo.size.totalMegaBytes);
         String tempStr = "${streamInfo.qualityLabel} : ${streamInfo.size}";
@@ -354,13 +332,7 @@ class _HomeState extends State<Home> {
       }
     }
 
-    if (downloadType == DownloadType.single) {
-      selectedVideoQuality = videoOptions.elementAt(smallestSizeIndex);
-    }
-    else {
-      selectedVideoQualities.add(videoOptions.elementAt(smallestSizeIndex));
-      playlistVideoOptions.add(videoOptions);
-    }
+    selectedVideoQuality = videoOptions.elementAt(smallestSizeIndex);
   }
 
   void showDownloadDialog(BuildContext context, Video videoMetaData) {
@@ -384,7 +356,7 @@ class _HomeState extends State<Home> {
               child: Stack(
                 children: [
                   SizedBox(
-                    width: 600,
+                    width: 800,
                     height: 600,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -402,8 +374,7 @@ class _HomeState extends State<Home> {
                                 } else {
                                   clearCollections();
                                   Navigator.of(context).pop();
-                                  Navigator.of(context)
-                                      .pop(); // Close Loading Dialog
+                                  Navigator.of(context).pop(); // Close Loading Dialog
                                 }
                               },
                             ),
@@ -424,9 +395,7 @@ class _HomeState extends State<Home> {
                             child: Text(
                               videoMetaData.title,
                               style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: "Poppins"),
+                                  fontSize: 20, fontWeight: FontWeight.bold, fontFamily: "Poppins"),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -444,7 +413,8 @@ class _HomeState extends State<Home> {
                                           fontSize: 18,
                                           color: Colors.blueGrey,
                                           fontWeight: FontWeight.w600,
-                                          fontFamily: "Poppins"),
+                                          fontFamily: "Poppins"
+                                      ),
                                     ),
                                     SizedBox(height: 8.0),
                                     DropdownMenu<String>(
@@ -473,7 +443,8 @@ class _HomeState extends State<Home> {
                                           fontSize: 18,
                                           color: Colors.blueGrey,
                                           fontWeight: FontWeight.w600,
-                                          fontFamily: "Poppins"),
+                                          fontFamily: "Poppins"
+                                      ),
                                     ),
                                     SizedBox(height: 8.0),
                                     DropdownMenu<String>(
@@ -498,51 +469,50 @@ class _HomeState extends State<Home> {
                           // Progress Bar
                           if (showProgress)
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 6.0),
+                              padding: const EdgeInsets.symmetric(vertical: 6.0),
                               child: Column(
                                 children: [
                                   Text(displayText,
-                                      style: TextStyle(
+                                    style: TextStyle(
                                         fontSize: 17,
                                         fontFamily: "Poppins",
                                         fontWeight: FontWeight.w600,
-                                      )),
+                                    )),
                                   SizedBox(height: 8.0),
                                   Builder(
-                                    builder: (context) {
-                                      switch (loadingState) {
-                                        // For Audio and Video
-                                        case LoadingState.audio:
-                                        case LoadingState.video:
-                                          return Column(
-                                            children: [
-                                              LinearProgressIndicator(
-                                                  value: progress,
-                                                  minHeight: 15,
-                                                  color: Colors.green,
-                                                  borderRadius:
-                                                      BorderRadius.all(
-                                                          Radius.circular(30))),
-                                              SizedBox(height: 8.0),
-                                              Text(
-                                                "${(progress * 100).toStringAsFixed(0)} %",
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    fontFamily: "Poppins"),
+                                  builder: (context) {
+                                    switch(loadingState) {
+
+                                      // For Audio and Video
+                                      case LoadingState.audio:
+                                      case LoadingState.video:
+                                        return Column(
+                                          children: [
+                                            LinearProgressIndicator(
+                                                value: progress,
+                                                minHeight: 15,
+                                                color: Colors.green,
+                                                borderRadius: BorderRadius.all(Radius.circular(30))
+                                            ),
+                                            SizedBox(height: 8.0),
+                                            Text(
+                                              "${(progress * 100).toStringAsFixed(0)} %",
+                                              style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily: "Poppins"
                                               ),
-                                            ],
-                                          );
+                                            ),
+                                          ],
+                                        );
 
-                                        case LoadingState.mux:
-                                          return CircularProgressIndicator(
-                                              color: Colors.red.shade400);
+                                      case LoadingState.mux:
+                                        return CircularProgressIndicator(color: Colors.red.shade400);
 
-                                        default:
-                                          return Container();
-                                      }
-                                    },
+                                      default:
+                                        return Container();
+                                    }
+                                  },
                                   ),
                                 ],
                               ),
@@ -560,8 +530,8 @@ class _HomeState extends State<Home> {
                                 ),
                               ),
                               onPressed: () async {
-                                directoryPath = openDirectoryPicker(
-                                    "Select Directory To Download")!;
+
+                                directoryPath = openDirectoryPicker("Select Directory To Download");
 
                                 setState(() {
                                   downloadClicked = true;
@@ -599,22 +569,22 @@ class _HomeState extends State<Home> {
                                   loadingState = LoadingState.mux;
                                 });
 
-                                // await processVideo(context);
+                                await processVideo(context);
 
                                 setState(() {
                                   downloadClicked = false;
                                   progress = 0.0;
                                   showProgress = false;
                                 });
+
                               },
                               icon: Icon(Icons.download),
-                              label: Text(
-                                'Download',
+                              label: Text('Download',
                                 style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    fontFamily: "Poppins"),
-                              ),
+                                    fontFamily: "Poppins"
+                                ),),
                             ),
                           ),
                         ],
@@ -625,6 +595,157 @@ class _HomeState extends State<Home> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void toggleSelectAll(bool? value) {
+    setState(() {
+      areAllSelected = value!;
+      for (var item in items) {
+        item.isChecked = areAllSelected;
+      }
+    });
+  }
+
+  void toggleItemSelection(int index, bool? value) {
+    setState(() {
+      items[index].isChecked = value!;
+      // Check if all items are selected
+      areAllSelected = items.every((item) => item.isChecked);
+    });
+  }
+
+  void showDownloadPlaylistDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // "Select All" checkbox at the top
+                      CheckboxListTile(
+                        title: Text('Select All'),
+                        value: areAllSelected,
+                        onChanged: toggleSelectAll,
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                      SizedBox(
+                        width: 1000,
+                        height: 700,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          controller: _scrollController,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            return Row(
+                              children: [
+                                // Checkbox for individual item (on the left of the image)
+                                Checkbox(
+                                  value: items[index].isChecked,
+                                  onChanged: (value) => toggleItemSelection(index, value),
+                                ),
+                                // Image column (1st column)
+                                Image.asset(
+                                  'assets/images/youtube.png', // Placeholder for image
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                                SizedBox(width: 8),
+                                // Video title column (2nd column)
+                                Expanded(
+                                  child: Text(items[index].title),
+                                ),
+                                SizedBox(width: 8),
+                                // Video dropdown (3rd column)
+                                DropdownButton<String>(
+                                  value: items[index].selectedVideo,
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      items[index].selectedVideo = newValue!;
+                                    });
+                                  },
+                                  items: items[index].videoOptions
+                                      .map((video) => DropdownMenuItem(
+                                    value: video,
+                                    child: Text(video),
+                                  ))
+                                      .toList(),
+                                ),
+                                SizedBox(width: 8),
+                                // Audio dropdown (4th column)
+                                DropdownButton<String>(
+                                  value: items[index].selectedAudio,
+                                  onChanged: (newValue) {
+                                    setState(() {
+                                      items[index].selectedAudio = newValue!;
+                                    });
+                                  },
+                                  items: items[index].audioOptions
+                                      .map((audio) => DropdownMenuItem(
+                                    value: audio,
+                                    child: Text(audio),
+                                  ))
+                                      .toList(),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                      // Buttons at the bottom close together
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              // Handle action for Button 1 inside dialog
+                              print('Button 1 pressed');
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                            child: Text('Button 1'),
+                          ),
+                          SizedBox(width: 8), // Small space between buttons
+                          ElevatedButton(
+                            onPressed: () {
+                              // Handle action for Button 2 inside dialog
+                              print('Button 2 pressed');
+                              Navigator.of(context).pop(); // Close the dialog
+                            },
+                            child: Text('Button 2'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Close button at the top-right of the dialog
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: Colors.red),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -709,15 +830,15 @@ class _HomeState extends State<Home> {
 
     final videoStream = yt.videos.streamsClient.get(videoTrack);
     videoFileName = '${videoMetaData.title}_video_.${videoTrack.container.name}'
-        .replaceAll(r'\', '_')
-        .replaceAll('/', '_')
-        .replaceAll('*', '_')
-        .replaceAll('?', '_')
-        .replaceAll('"', '_')
-        .replaceAll('<', '_')
-        .replaceAll('>', '_')
-        .replaceAll(':', '_')
-        .replaceAll('|', '_');
+            .replaceAll(r'\', '_')
+            .replaceAll('/', '_')
+            .replaceAll('*', '_')
+            .replaceAll('?', '_')
+            .replaceAll('"', '_')
+            .replaceAll('<', '_')
+            .replaceAll('>', '_')
+            .replaceAll(':', '_')
+            .replaceAll('|', '_');
 
     videoFile = File('$directoryPath/$videoFileName');
     if (videoFile.existsSync()) {
@@ -750,19 +871,14 @@ class _HomeState extends State<Home> {
     }
 
     final arguments = [
-      '-i',
-      inputVideoStream,
-      '-i',
-      inputAudioStream,
-      '-c:v',
-      'copy',
-      '-c:a',
-      'aac',
+      '-i', inputVideoStream,
+      '-i', inputAudioStream,
+      '-c:v', 'copy',
+      '-c:a', 'aac',
       outputStream,
     ];
 
-    final process =
-        await Process.start("ffmpeg.exe", arguments, runInShell: true);
+    final process = await Process.start("ffmpeg.exe", arguments, runInShell: true);
 
     // Write to Log File
     Directory appDocsDir = await getApplicationDocumentsDirectory();
@@ -781,196 +897,13 @@ class _HomeState extends State<Home> {
       showMsgDialog(context, "Processing Finished Successfully ...");
       videoFile.deleteSync();
       audioFile.deleteSync();
-    } else {
+    }
+    else {
       showAlertDialog(context, "Failed To Process Video !!!");
     }
 
     await logSink.close();
   }
-
-  void showDownloadPlaylistDialog(BuildContext context, List<Video> playlistMetadata) {
-    // List<String?> selectedAudioQualities = List.filled(playlistMetadata.length, null);
-    // List<String?> selectedVideoQualities = List.filled(playlistMetadata.length, null);
-    List<bool> isSelected = List.filled(playlistMetadata.length, true);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: SizedBox(
-                width: 1200,
-                height: 900,
-                child: Column(
-                  children: [
-                    // Title and Close Button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Download Playlist",
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => {
-                              Navigator.of(context).pop(),
-                              Navigator.of(context).pop()
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(),
-
-                    // Playlist ListView
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: playlistMetadata.length,
-                        itemBuilder: (context, index) {
-                          var video = playlistMetadata[index];
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Checkbox
-                                  Checkbox(
-                                    value: isSelected[index],
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        isSelected[index] = value!;
-                                      });
-                                    },
-                                  ),
-
-                                  // Thumbnail and Title
-                                  Row(
-                                    children: [
-                                      Image.network(
-                                        video.thumbnails.standardResUrl,
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.contain,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      // Title Wrapping Section
-                                      SizedBox(
-                                        width: 400, // Adjust the width as needed
-                                        child: Text(
-                                          video.title,
-                                          maxLines: 3,  // Wrap in 2-3 lines
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  // Audio Quality Dropdown
-                                  Column(
-                                    children: [
-                                      const Text("Audio Quality",
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                      DropdownMenu<String>(
-                                        initialSelection: selectedAudioQualities[index],
-                                        onSelected: (String? newValue) {
-                                          setState(() {
-                                            selectedAudioQuality = newValue;
-                                          });
-                                        },
-                                        dropdownMenuEntries: playlistAudioOptions[index]
-                                            .map<DropdownMenuEntry<String>>(
-                                                (String value) {
-                                              return DropdownMenuEntry<String>(
-                                                  value: value, label: value);
-                                            }).toList(),
-                                      ),
-                                    ],
-                                  ),
-
-                                  // Video Quality Dropdown
-                                  Column(
-                                    children: [
-                                      const Text("Video Quality",
-                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                                      DropdownMenu<String>(
-                                        initialSelection: selectedVideoQualities[index],
-                                        onSelected: (String? newValue) {
-                                          setState(() {
-                                            selectedVideoQuality = newValue;
-                                          });
-                                        },
-                                        dropdownMenuEntries: playlistVideoOptions[index]
-                                            .map<DropdownMenuEntry<String>>(
-                                                (String value) {
-                                              return DropdownMenuEntry<String>(
-                                                  value: value, label: value);
-                                            }).toList(),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // Download Button
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          List<Video> selectedVideos = [];
-                          for (int i = 0; i < playlistMetadata.length; i++) {
-                            if (isSelected[i]) {
-                              selectedVideos.add(playlistMetadata[i]);
-                            }
-                          }
-
-                          if (selectedVideos.isNotEmpty) {
-                            Navigator.of(context).pop(); // Close dialog
-                            // await downloadSelectedVideos(context, selectedVideos, selectedAudioQualities, selectedVideoQualities);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("No videos selected")),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(200, 50),
-                        ),
-                        child: const Text("Download (All/Selected)"),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-
 
   void showExitConfirmationDialog(BuildContext context) {
     showDialog(
@@ -1006,31 +939,30 @@ class _HomeState extends State<Home> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text(
-          'Error',
-          style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              fontFamily: "Poppins",
-              color: Colors.red),
-        ),
-        content: Text(
-          errMsg,
-          style: TextStyle(
-              fontSize: 15, fontWeight: FontWeight.w500, fontFamily: "Poppins"),
-        ),
+        title: const Text('Error', style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            fontFamily: "Poppins",
+            color: Colors.red
+        ),),
+        content: Text(errMsg, style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Poppins"
+        ),),
         actions: <Widget>[
           TextButton(
             autofocus: true,
-            onPressed: () => {Navigator.of(context).pop()},
-            child: const Text(
-              'Ok',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  fontFamily: "Poppins",
-                  color: Colors.black),
-            ),
+            onPressed: () => {
+              Navigator.pop(context, 'Ok'),
+              Navigator.of(context).pop()
+            },
+            child: const Text('Ok', style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                fontFamily: "Poppins",
+                color: Colors.black
+            ),),
           ),
         ],
       ),
@@ -1042,32 +974,28 @@ class _HomeState extends State<Home> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text(
-          'Video Status',
-          style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              fontFamily: "Poppins",
-              color: Colors.green),
-        ),
-        content: Text(
-          msg,
-          style: TextStyle(
-              fontSize: 15, fontWeight: FontWeight.w500, fontFamily: "Poppins"),
-        ),
+        title: const Text('Video Status', style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            fontFamily: "Poppins",
+            color: Colors.green
+        ),),
+        content: Text(msg, style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            fontFamily: "Poppins"
+        ),),
         actions: <Widget>[
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(context, 'Ok'),
-            child: const Text(
-              'Ok',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  fontFamily: "Poppins",
-                  color: Colors.black),
+            child: const Text('Ok', style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              fontFamily: "Poppins",
+              color: Colors.black
             ),
-          )
+          ),)
         ],
       ),
     );
@@ -1091,11 +1019,13 @@ class _HomeState extends State<Home> {
                 CircularProgressIndicator(color: Colors.blueGrey),
                 SizedBox(width: 30.0),
                 Text("Please Wait ...",
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: "Poppins"),
-                    textAlign: TextAlign.center),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: "Poppins"
+                  ),
+                  textAlign: TextAlign.center
+                ),
               ],
             ),
           ),
