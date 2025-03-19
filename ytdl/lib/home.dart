@@ -271,9 +271,11 @@ class _HomeState extends State<Home> {
       await for (var video in yt.playlists.getVideos(playlist.id)) {
         playlistVideos.add(video);
         var manifest = await yt.videos.streamsClient.getManifest(video.id);
-        clearCollections();
         await getAudioStream(manifest, video);
         await getVideoStream(manifest, video);
+        playlistAudioOptions.add(List<String>.from(audioOptions));
+        playlistVideoOptions.add(List<String>.from(videoOptions));
+        clearCollections();
       }
 
       showDownloadPlaylistDialog(context, playlistVideos);
@@ -316,7 +318,6 @@ class _HomeState extends State<Home> {
     }
     else {
       selectedAudioQualities.add(audioOptions.elementAt(index));
-      playlistAudioOptions.add(audioOptions);
     }
 
   }
@@ -359,7 +360,6 @@ class _HomeState extends State<Home> {
     }
     else {
       selectedVideoQualities.add(videoOptions.elementAt(smallestSizeIndex));
-      playlistVideoOptions.add(videoOptions);
     }
   }
 
@@ -789,8 +789,6 @@ class _HomeState extends State<Home> {
   }
 
   void showDownloadPlaylistDialog(BuildContext context, List<Video> playlistMetadata) {
-    // List<String?> selectedAudioQualities = List.filled(playlistMetadata.length, null);
-    // List<String?> selectedVideoQualities = List.filled(playlistMetadata.length, null);
     List<bool> isSelected = List.filled(playlistMetadata.length, true);
 
     showDialog(
@@ -799,6 +797,8 @@ class _HomeState extends State<Home> {
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            int selectedCount = isSelected.where((selected) => selected).length;
+
             return Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15),
@@ -814,8 +814,9 @@ class _HomeState extends State<Home> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            "Download Playlist",
+                          Text(
+                            "$playlistTitle by $playlistAuthor",
+                            // "Playlist",
                             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                           ),
                           IconButton(
@@ -935,7 +936,8 @@ class _HomeState extends State<Home> {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: ElevatedButton(
-                        onPressed: () async {
+                        onPressed: selectedCount > 0 ?
+                            () async {
                           List<Video> selectedVideos = [];
                           for (int i = 0; i < playlistMetadata.length; i++) {
                             if (isSelected[i]) {
@@ -951,13 +953,17 @@ class _HomeState extends State<Home> {
                               const SnackBar(content: Text("No videos selected")),
                             );
                           }
-                        },
+                        }: null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueGrey,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(200, 50),
                         ),
-                        child: const Text("Download (All/Selected)"),
+                        child: Text(
+                          selectedCount == playlistMetadata.length
+                              ? "Download All Videos"
+                              : "Download $selectedCount Video(s)"
+                        ),
                       ),
                     ),
                   ],
