@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:YTDL" xmlns:forms="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         mc:Ignorable="d"
-        Title="Download Video" Height="600" Width="800" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" Icon="/youtube.ico" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow">
+        Title="Download Video" Height="600" Width="800" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow">
     <Grid>
         <ComboBox x:Name="audioComboBox" HorizontalAlignment="Left" Margin="498,352,1,1" VerticalAlignment="Top" Width="120"/>
         <ComboBox x:Name="videoComboBox" HorizontalAlignment="Left" Margin="206,352,5,5" VerticalAlignment="Top" Width="120"/>

@@ -63,9 +63,6 @@ namespace YTDL
         private List<double> videoSize;
         private List<String> videoQualities, selectedVideoQualities;
 
-        // Download Progress
-        public Double progressValue;
-
         public static YoutubeDownloader GetInstance()
         {
             if (_instance == null)
