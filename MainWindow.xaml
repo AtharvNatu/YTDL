@@ -1,0 +1,17 @@
+﻿<Window x:Class="YTDL.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:YTDL"
+        mc:Ignorable="d"
+        Title="YTDL : YouTube Downloader" Height="700" Width="1000" WindowStartupLocation="CenterScreen" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Consolas">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="11*"/>
+            <ColumnDefinition Width="149*"/>
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="URLTxtBox" Grid.Column="1" HorizontalAlignment="Left" Margin="123,284,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="591" Height="37"/>
+        <Button Grid.Column="1" Content="Button" HorizontalAlignment="Left" Margin="336,531,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="Button_Click"/>
+    </Grid>
+</Window>
