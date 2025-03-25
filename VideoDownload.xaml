@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:YTDL" xmlns:forms="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         mc:Ignorable="d"
+        Style="{StaticResource MaterialDesignWindow}"
         Title="Download Video" Height="600" Width="800" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow">
     <Grid>
         <ComboBox x:Name="audioComboBox" HorizontalAlignment="Left" Margin="498,352,1,1" VerticalAlignment="Top" Width="120"/>
@@ -17,6 +18,7 @@
         <Label Content="Audio Quality" HorizontalAlignment="Left" Margin="517,313,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.021,-0.068" Height="33"/>
         <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="29" Margin="0,435,0,0" VerticalAlignment="Top" Width="208"/>
         <Label x:Name="statusLbl" Content="" HorizontalAlignment="Center" Margin="0,397,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.021,-0.068" Height="33"/>
+        
 
     </Grid>
 </Window>

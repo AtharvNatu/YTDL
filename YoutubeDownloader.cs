@@ -1,14 +1,13 @@
-﻿using AngleSharp.Media.Dom;
+﻿
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.IO.Packaging;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -49,7 +48,7 @@ namespace YTDL
 
         // Audio
         public List<String> audioOptions;
-        public String selectedAudioQuality;
+        public String selectedAudioQuality, outputFileName, audioFilePath;
 
         private List<int> audioQualities, audioSize;
         private List<String> selectedAudioQualities;
@@ -58,10 +57,12 @@ namespace YTDL
 
         // Video
         public List<String> videoOptions;
-        public String selectedVideoQuality;
+        public String selectedVideoQuality, videoFilePath;
 
         private List<double> videoSize;
         private List<String> videoQualities, selectedVideoQualities;
+        private List<VideoOnlyStreamInfo> videoOnlyStreamInfo;
+        private VideoOnlyStreamInfo videoTrack;
 
         public static YoutubeDownloader GetInstance()
         {
@@ -171,11 +172,11 @@ namespace YTDL
             this.videoQualities.Clear();
             this.videoSize.Clear();
 
-            var streamInfo = this.streamManifest.GetVideoOnlyStreams()
+            videoOnlyStreamInfo = this.streamManifest.GetVideoOnlyStreams()
                 .Where(s => s.Container.Name != "webm" && s.VideoQuality.Label != "144p")
                 .ToList();
 
-            foreach (var stream in streamInfo)
+            foreach (var stream in videoOnlyStreamInfo)
             {
                 videoQualities.Add(stream.VideoQuality.Label);
                 videoSize.Add(stream.Size.MegaBytes);
@@ -196,78 +197,22 @@ namespace YTDL
             }
         }
 
-        public async void DownloadAndProcessVideo(String selectedAudio, String selectedVideo, String path, ProgressBar progressBar, Label statusLbl)
+        public async Task<int> DownloadAndProcessVideo(String selectedAudio, String selectedVideo, String path, System.Windows.Controls.ProgressBar progressBar, System.Windows.Controls.Label statusLbl)
         {
-            await DownloadAudioTrack(selectedAudio, path, progressBar, statusLbl);
-            await DownloadVideoTrack(selectedAudio, path, progressBar, statusLbl);
+            progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
+            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Audio ..."; });
+            await DownloadAudioTrack(selectedAudio, path, progressBar);
+
+            progressBar.Dispatcher.Invoke(() => {progressBar.Value = 0;});
+            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Video ..."; });
+            await DownloadVideoTrack(selectedVideo, path, progressBar);
+
+            progressBar.Dispatcher.Invoke(() => { progressBar.Visibility = Visibility.Hidden; });
+            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Processing ..."; });
+            return ProcessMedia(path);
         }
 
-        private async Task DownloadAudioTrack(String selectedAudio, String path, ProgressBar progressBar, Label statusLbl)
-        {
-            var selectedAudioAttributes = selectedAudio.Split(':');
-            var selectedAudioBitrateList = selectedAudioAttributes.ElementAt(0).Split(' ');
-            var selectedAudioSizeList = selectedAudioAttributes.ElementAt(1).Split(' ');
-
-            int selectedAudioBitrate = int.Parse(selectedAudioBitrateList.ElementAt(0));
-            int selectedAudioSize = int.Parse(selectedAudioSizeList.ElementAt(1));
-
-            foreach (var audioStreamOption in audioOnlyStreamInfo)
-            {
-                int streamBitrate = (int)Math.Ceiling(audioStreamOption.Bitrate.KiloBitsPerSecond);
-                int streamSize = (int)Math.Ceiling(audioStreamOption.Size.MegaBytes);
-                if (selectedAudioBitrate == streamBitrate && selectedAudioSize == streamSize)
-                {
-                    audioTrack = audioStreamOption;
-                    break;
-                }
-            }
-
-            var audioStream = await yt.Videos.Streams.GetAsync(audioTrack);
-
-            var audioFileName = $"{video.Title}_audio_.{audioTrack.Container.Name}"
-                .Replace('\\', '_')
-                .Replace('/', '_')
-                .Replace('*', '_')
-                .Replace('?', '_')
-                .Replace('"', '_')
-                .Replace('<', '_')
-                .Replace('>', '_')
-                .Replace(':', '_')
-                .Replace('|', '_');
-
-            var outputFileName = $"{video.Title}.{audioTrack.Container.Name}"
-                .Replace('\\', '_')
-                .Replace('/', '_')
-                .Replace('*', '_')
-                .Replace('?', '_')
-                .Replace('"', '_')
-                .Replace('<', '_')
-                .Replace('>', '_')
-                .Replace(':', '_')
-                .Replace('|', '_');
-
-            var audioFilePath = Path.Combine(path, audioFileName);
-            FileInfo audioFile = new FileInfo(audioFilePath);
-            if (!audioFile.Exists)
-                File.Create(audioFilePath).Dispose();
-
-            var progress = new DelegateProgress<double>(p =>
-            {
-                progressBar.Dispatcher.Invoke(() =>
-                {
-                    progressBar.Value = p * 100;
-                });
-            });
-
-            statusLbl.Dispatcher.Invoke(() =>
-            {
-                statusLbl.Content = "Downloading Audio ...";
-            });
-
-            await yt.Videos.Streams.DownloadAsync(audioTrack, audioFilePath, progress);
-        }
-
-        private async Task DownloadVideoTrack(String selectedAudio, String path, ProgressBar progressBar, Label statusLbl)
+        private async Task DownloadAudioTrack(String selectedAudio, String path, System.Windows.Controls.ProgressBar progressBar)
         {
             var selectedAudioAttributes = selectedAudio.Split(':');
             var selectedAudioBitrateList = selectedAudioAttributes.ElementAt(0).Split(' ');
@@ -287,8 +232,6 @@ namespace YTDL
                 }
             }
 
-            var audioStream = await yt.Videos.Streams.GetAsync(audioTrack);
-
             var audioFileName = $"{video.Title}_audio_.{audioTrack.Container.Name}"
                 .Replace('\\', '_')
                 .Replace('/', '_')
@@ -300,7 +243,7 @@ namespace YTDL
                 .Replace(':', '_')
                 .Replace('|', '_');
 
-            var outputFileName = $"{video.Title}.{audioTrack.Container.Name}"
+            outputFileName = $"{video.Title}.{audioTrack.Container.Name}"
                 .Replace('\\', '_')
                 .Replace('/', '_')
                 .Replace('*', '_')
@@ -311,7 +254,7 @@ namespace YTDL
                 .Replace(':', '_')
                 .Replace('|', '_');
 
-            var audioFilePath = Path.Combine(path, audioFileName);
+            audioFilePath = System.IO.Path.Combine(path, audioFileName);
             FileInfo audioFile = new FileInfo(audioFilePath);
             if (!audioFile.Exists)
                 File.Create(audioFilePath).Dispose();
@@ -324,14 +267,91 @@ namespace YTDL
                 });
             });
 
-            statusLbl.Dispatcher.Invoke(() =>
-            {
-                statusLbl.Content = "Downloading Audio ...";
-            });
-
             await yt.Videos.Streams.DownloadAsync(audioTrack, audioFilePath, progress);
         }
 
+        private async Task DownloadVideoTrack(String selectedVideo, String path, System.Windows.Controls.ProgressBar progressBar)
+        {
+            var selectedVideoAttributes = selectedVideo.Split(':');
+            var selectedVideoPixels = selectedVideoAttributes.ElementAt(0).Trim();
+            var selectedVideoSize = selectedVideoAttributes.ElementAt(1).Trim();
+
+            foreach (var videoStreamOption in videoOnlyStreamInfo)
+            {
+                if (selectedVideoPixels == videoStreamOption.VideoQuality.Label
+                    && 
+                    selectedVideoSize == videoStreamOption.Size.ToString())
+                {
+                    videoTrack = videoStreamOption;
+                    break;
+                }
+            }
+
+            var videoFileName = $"{video.Title}_video_.{videoTrack.Container.Name}"
+                .Replace('\\', '_')
+                .Replace('/', '_')
+                .Replace('*', '_')
+                .Replace('?', '_')
+                .Replace('"', '_')
+                .Replace('<', '_')
+                .Replace('>', '_')
+                .Replace(':', '_')
+                .Replace('|', '_');
+
+            videoFilePath = System.IO.Path.Combine(path, videoFileName);
+            FileInfo videoFile = new FileInfo(videoFilePath);
+            if (!videoFile.Exists)
+                File.Create(videoFilePath).Dispose();
+
+            var progress = new DelegateProgress<double>(p =>
+            {
+                progressBar.Dispatcher.Invoke(() =>
+                {
+                    progressBar.Value = p * 100;
+                });
+            });
+
+            await yt.Videos.Streams.DownloadAsync(videoTrack, videoFilePath, progress);
+        }
+
+        private int ProcessMedia(String path)
+        {
+            var outputFilePath = System.IO.Path.Combine(path, outputFileName);
+            FileInfo outputFile = new FileInfo(outputFilePath);
+            if (!outputFile.Exists)
+            {
+                File.Create(outputFilePath).Dispose();
+            }
+               
+            string exePath = @"ffmpeg.exe";
+            string command = $"-i \"{videoFilePath}\" -i \"{audioFilePath} \" -c:v copy -c:a aac -y \"{outputFilePath}\"";
+
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = command,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+            };
+
+            using (Process process = new Process())
+            {
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
+                int exitCode = process.ExitCode;
+                if (exitCode == 0)
+                {
+                    File.Delete(audioFilePath);
+                    File.Delete(videoFilePath);
+                    return 0;
+                }
+                else
+                    return -1;
+            }
+        }
+        
         public BitmapImage GetThumbnail()
         {
             BitmapImage bitmap = new BitmapImage();

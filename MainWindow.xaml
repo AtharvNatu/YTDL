@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:YTDL"
         mc:Ignorable="d"
+        Style="{StaticResource MaterialDesignWindow}"
         Title="YTDL : YouTube Downloader" Height="700" Width="1000" WindowStartupLocation="CenterScreen" HorizontalAlignment="Center" VerticalAlignment="Center">
     <Grid>
         <Grid.ColumnDefinitions>
