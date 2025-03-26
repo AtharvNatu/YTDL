@@ -33,16 +33,18 @@ namespace YTDL
         {
             bool status = false;
 
-            #if DEBUG
-                status = await ytdl.SearchVideo("https://www.youtube.com/watch?v=3NCn1CCOXqE&list=PLPwbI_iIX3aR_rqjogPSCGdjx8cOrTC_-&index=2");
-            #else
-                status = await ytdl.SearchVideo(URLTxtBox.Text);
-            #endif
+            //#if DEBUG
+            //    status = await ytdl.SearchVideo("https://www.youtube.com/watch?v=3NCn1CCOXqE&list=PLPwbI_iIX3aR_rqjogPSCGdjx8cOrTC_-&index=2");
+            //#else
+            //    status = await ytdl.SearchVideo(URLTxtBox.Text);
+            //#endif
 
-            if (status)
-            {
-                new VideoDownload().Show();
-            }
+            //if (status)
+            //{
+            //    new VideoDownload().Show();
+            //}
+
+            new PlaylistDownload().Show();
         }
     }
 }

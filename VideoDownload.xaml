@@ -11,14 +11,14 @@
         <ComboBox x:Name="audioComboBox" HorizontalAlignment="Left" Margin="498,352,1,1" VerticalAlignment="Top" Width="120"/>
         <ComboBox x:Name="videoComboBox" HorizontalAlignment="Left" Margin="206,352,5,5" VerticalAlignment="Top" Width="120"/>
         <Border HorizontalAlignment="Left" Height="178" Margin="258,109,0,0" VerticalAlignment="Top" Width="323" BorderThickness="1,1,1,1" CornerRadius="5,5,5,5" >
-            <Image x:Name="thumbnail" Stretch="UniformToFill"/>
+            <Image x:Name="thumbnail" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
-        <Button Content="Download" HorizontalAlignment="Center" Margin="0,501,0,0" VerticalAlignment="Top" Height="55" Width="158" Click="Button_Click"/>
+        <Button Content="Download" HorizontalAlignment="Center" VerticalAlignment="Bottom" Height="55" Width="158" Click="Button_Click" Margin="0,0,0,20"/>
         <Label Content="Video Quality" HorizontalAlignment="Left" Margin="225,314,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.021,-0.068" Height="33"/>
         <Label Content="Audio Quality" HorizontalAlignment="Left" Margin="517,313,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.021,-0.068" Height="33"/>
         <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="29" Margin="0,435,0,0" VerticalAlignment="Top" Width="208"/>
         <Label x:Name="statusLbl" Content="" HorizontalAlignment="Center" Margin="0,397,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.021,-0.068" Height="33"/>
-        
+
 
     </Grid>
 </Window>
