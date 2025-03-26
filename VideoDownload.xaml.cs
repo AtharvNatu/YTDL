@@ -28,7 +28,7 @@ namespace YTDL
 
             ytdl = YoutubeDownloader.GetInstance();
 
-            thumbnail.Source = ytdl.GetThumbnail();
+            thumbnail.Source = ytdl.GetThumbnail(0);
 
             audioComboBox.ItemsSource = ytdl.audioOptions;
             audioComboBox.SelectedItem = ytdl.selectedAudioQuality;

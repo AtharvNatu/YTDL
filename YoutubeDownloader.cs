@@ -22,14 +22,6 @@ namespace YTDL
         playlist
     };
 
-    enum LoadingState 
-    { 
-        initial, 
-        audio, 
-        video, 
-        mux 
-    };
-
     internal class YoutubeDownloader
     {
 
@@ -38,20 +30,26 @@ namespace YTDL
         private static YoutubeDownloader _instance;
         private static readonly object _instanceLock = new object();
 
-
         private YoutubeClient yt;
 
         private DownloadType downloadType;
 
-        private StreamManifest streamManifest;
+        //! Single Video
         private YoutubeExplode.Videos.Video video;
+
+        //! Playlist
+        private Playlist playlist;
+        public String playlistTitle, playlistAuthor;
+        public int playlistCount;
+        public List<PlaylistVideo> playlistVideos;
+        public List<List<String>> playlistAudioOptions, playlistVideoOptions;
 
         // Audio
         public List<String> audioOptions;
         public String selectedAudioQuality, outputFileName, audioFilePath;
 
         private List<int> audioQualities, audioSize;
-        private List<String> selectedAudioQualities;
+        public List<String> selectedAudioQualities;
         private List<AudioOnlyStreamInfo> audioOnlyStreamInfo;
         private AudioOnlyStreamInfo audioTrack;
 
@@ -60,7 +58,7 @@ namespace YTDL
         public String selectedVideoQuality, videoFilePath;
 
         private List<double> videoSize;
-        private List<String> videoQualities, selectedVideoQualities;
+        public List<String> videoQualities, selectedVideoQualities;
         private List<VideoOnlyStreamInfo> videoOnlyStreamInfo;
         private VideoOnlyStreamInfo videoTrack;
 
@@ -75,6 +73,10 @@ namespace YTDL
                         _instance = new YoutubeDownloader
                         {
                             yt = new YoutubeClient(),
+
+                            playlistVideos = new List<PlaylistVideo>(),
+                            playlistAudioOptions = new List<List<String>>(),
+                            playlistVideoOptions = new List<List<String>>(),
 
                             audioQualities = new List<int>(),
                             audioSize = new List<int>(),
@@ -94,7 +96,7 @@ namespace YTDL
             return _instance;
         }
 
-        public async Task<bool> SearchVideo(string url)
+        public async Task<DownloadType> SearchVideo(string url)
         {
             if (url.Contains("playlist"))
             {
@@ -107,43 +109,45 @@ namespace YTDL
                 await GetVideo(url);
             }
 
-            return true;
+            return downloadType;
         }
 
         public async Task GetVideo(String url)
         {
             this.video = await yt.Videos.GetAsync(url);
-            this.streamManifest = await yt.Videos.Streams.GetManifestAsync(url);
+            StreamManifest streamManifest = await yt.Videos.Streams.GetManifestAsync(url);
             ClearCollections();
-            GetAudioStream();
-            GetVideoStream();
+            GetAudioStream(streamManifest);
+            GetVideoStream(streamManifest);
         }
 
         public async Task GetVideos(String url)
         {
-            var youtube = new YoutubeClient();
+            playlist = await yt.Playlists.GetAsync(url);
+            playlistAuthor = playlist.Author.ChannelTitle;
+            playlistTitle = playlist.Title;
+            playlistCount = (int)playlist.Count;
 
-            var playlistUrl = "https://www.youtube.com/playlist?list=PLPwbI_iIX3aR_rqjogPSCGdjx8cOrTC_-";
-            var playlist = await youtube.Playlists.GetAsync(playlistUrl);
-
-            //titleLbl.Content = playlist.Title;
-            //authorNameLbl.Content = playlist.Author.ChannelTitle;
-            //videoCountLbl.Content = playlist.Count;
-
-            //var videos = await youtube.Playlists.GetVideosAsync(playlistUrl);
-            //foreach (var video in videos)
-            //{
-            //    listView.Items.Add(video.Title);
-            //}
+            var videos = await yt.Playlists.GetVideosAsync(url);
+            foreach (var video in videos)
+            {
+                playlistVideos.Add(video);
+                StreamManifest streamManifest = await yt.Videos.Streams.GetManifestAsync(video.Url);
+                GetAudioStream(streamManifest);
+                GetVideoStream(streamManifest);
+                playlistAudioOptions.Add(audioOptions.ToList());
+                playlistVideoOptions.Add(videoOptions.ToList());
+                ClearCollections();
+            }
         }
 
-        public void GetAudioStream()
+        public void GetAudioStream(StreamManifest streamManifest)
         {
             this.audioOptions.Clear();
             this.audioSize.Clear();
             this.audioQualities.Clear();
 
-            audioOnlyStreamInfo = this.streamManifest.GetAudioOnlyStreams()
+            audioOnlyStreamInfo = streamManifest.GetAudioOnlyStreams()
                 .Where(s => s.Container.Name != "webm")
                 .ToList();
 
@@ -166,13 +170,13 @@ namespace YTDL
             }
         }
 
-        public void GetVideoStream()
+        public void GetVideoStream(StreamManifest streamManifest)
         {
             this.videoOptions.Clear();
             this.videoQualities.Clear();
             this.videoSize.Clear();
 
-            videoOnlyStreamInfo = this.streamManifest.GetVideoOnlyStreams()
+            videoOnlyStreamInfo = streamManifest.GetVideoOnlyStreams()
                 .Where(s => s.Container.Name != "webm" && s.VideoQuality.Label != "144p")
                 .ToList();
 
@@ -352,11 +356,16 @@ namespace YTDL
             }
         }
         
-        public BitmapImage GetThumbnail()
+        public BitmapImage GetThumbnail(int index)
         {
             BitmapImage bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri(video.Thumbnails.TryGetWithHighestResolution().Url);
+
+            if (downloadType == DownloadType.single)
+                bitmap.UriSource = new Uri(video.Thumbnails.TryGetWithHighestResolution().Url);
+            else
+                bitmap.UriSource = new Uri(playlistVideos.ElementAt(index).Thumbnails.TryGetWithHighestResolution().Url);
+            
             bitmap.CacheOption = BitmapCacheOption.Default;
             bitmap.EndInit();
 
@@ -371,6 +380,12 @@ namespace YTDL
             this.videoOptions.Clear();
             this.videoQualities.Clear();
             this.videoSize.Clear();
+        }
+
+        public bool IsValidUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out Uri uriResult)
+                   && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
     }
 

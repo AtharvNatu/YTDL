@@ -13,6 +13,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <Label x:Name="titleLabel" Content="Label" HorizontalAlignment="Center" Margin="0,0,0,0" VerticalAlignment="Center" RenderTransformOrigin="-11.402,0.752"/>
+
         <!-- Top Panel with Buttons -->
         <StackPanel Orientation="Horizontal" Margin="10" HorizontalAlignment="Right">
             <Button Content="Add Row" Click="AddRow_Click" Padding="10,5" Margin="0,0,10,0"/>
@@ -39,5 +41,6 @@
                 Foreground="White"
                 FontWeight="Bold"
                 Width="200"/>
+        
     </Grid>
 </Window>

@@ -12,7 +12,7 @@
             <ColumnDefinition Width="11*"/>
             <ColumnDefinition Width="149*"/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="URLTxtBox" Grid.Column="1" HorizontalAlignment="Left" Margin="123,284,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="591" Height="37"/>
+        <TextBox x:Name="URLTxtBox" Grid.Column="1" HorizontalAlignment="Left" Margin="123,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="591" Height="37"/>
         <Button Grid.Column="1" Content="Button" HorizontalAlignment="Left" Margin="336,531,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="Button_Click"/>
     </Grid>
 </Window>

@@ -9,127 +9,142 @@ namespace YTDL
 {
     public partial class PlaylistDownload : Window
     {
+        private YoutubeDownloader ytdl;
+
         public PlaylistDownload()
         {
             InitializeComponent();
+            ytdl = YoutubeDownloader.GetInstance();
+            LoadPlaylistData();
+        }
+
+        private void LoadPlaylistData()
+        {
+            titleLabel.Content = ytdl.playlistTitle;
+
+            for (int i = 0; i < ytdl.playlistCount; i++)
+            {
+                var rowBorder = new Border
+                {
+                    CornerRadius = new CornerRadius(10),
+                    BorderBrush = new SolidColorBrush(Colors.LightGray),
+                    BorderThickness = new Thickness(1),
+                    Margin = new Thickness(5, 5, 15, 5),
+                    Background = new SolidColorBrush(Colors.White),
+                    Padding = new Thickness(10),
+                    Effect = new System.Windows.Media.Effects.DropShadowEffect
+                    {
+                        Color = Colors.Gray,
+                        Direction = 320,
+                        ShadowDepth = 4,
+                        Opacity = 0.3
+                    }
+                };
+
+                var rowGrid = new Grid { Margin = new Thickness(5) };
+
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });    // Checkbox
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });   // Image
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(400) });   // Title
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });   // ComboBox 1
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });   // ComboBox 2
+
+                var checkbox = new CheckBox
+                {
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    IsChecked = true
+                };
+
+                // Event handlers for checkbox
+                checkbox.Checked += (evt, args) =>
+                {
+                    if (AreAllCheckboxesSelected())
+                        SelectAllCheckbox.IsChecked = true;
+                    UpdateSelectionCount();
+                };
+
+                checkbox.Unchecked += (evt, args) =>
+                {
+                    SelectAllCheckbox.IsChecked = false;
+                    UpdateSelectionCount();
+                };
+
+                Grid.SetColumn(checkbox, 0);
+                rowGrid.Children.Add(checkbox);
+
+                // Add Image
+                var img = new Image
+                {
+                    Width = 120,
+                    Height = 80,
+                    Source = ytdl.GetThumbnail(i),
+                    Margin = new Thickness(5),
+                    Stretch = Stretch.UniformToFill,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                Grid.SetColumn(img, 1);
+                rowGrid.Children.Add(img);
+
+                // Add Wrapping Title
+                var textBlock = new TextBlock
+                {
+                    Text = ytdl.playlistVideos.ElementAt(i).Title,
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 400,
+                    Margin = new Thickness(5),
+                    Foreground = Brushes.Black,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Medium,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                Grid.SetColumn(textBlock, 2);
+                rowGrid.Children.Add(textBlock);
+
+                // Video Qualities
+                var combo1 = new ComboBox
+                {
+                    ItemsSource = ytdl.playlistVideoOptions.ElementAt(i),
+                    SelectedItem = ytdl.selectedVideoQualities.ElementAt(i),
+                    Margin = new Thickness(5),
+                    Width = 150,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                Grid.SetColumn(combo1, 3);
+                rowGrid.Children.Add(combo1);
+
+                // Audio Qualities
+                var combo2 = new ComboBox
+                {
+                    ItemsSource = ytdl.playlistAudioOptions.ElementAt(i),
+                    SelectedItem = ytdl.selectedAudioQualities.ElementAt(i),
+                    Margin = new Thickness(5),
+                    Width = 150,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                Grid.SetColumn(combo2, 4);
+                rowGrid.Children.Add(combo2);
+
+                // Add Grid inside Border
+                rowBorder.Child = rowGrid;
+
+                // Add row to the container
+                RowsContainer.Children.Add(rowBorder);
+
+                // Update the selection count
+                UpdateSelectionCount();
+            }
+
+            
         }
 
         private void AddRow_Click(object sender, RoutedEventArgs e)
         {
-            var rowBorder = new Border
-            {
-                CornerRadius = new CornerRadius(10),
-                BorderBrush = new SolidColorBrush(Colors.LightGray),
-                BorderThickness = new Thickness(1),
-                Margin = new Thickness(5, 5, 15, 5),
-                Background = new SolidColorBrush(Colors.White),
-                Padding = new Thickness(10),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = Colors.Gray,
-                    Direction = 320,
-                    ShadowDepth = 4,
-                    Opacity = 0.3
-                }
-            };
-
-            var rowGrid = new Grid
-            {
-                Margin = new Thickness(5)
-            };
-
-            // Define columns
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });    // Checkbox
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });   // Image
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(400) });   // Title
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });   // ComboBox 1
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });   // ComboBox 2
-
-            // Add Checkbox (default selected)
-            var checkbox = new CheckBox
-            {
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                IsChecked = true   // Default selection
-            };
-
-            // Event handlers for checkbox
-            checkbox.Checked += (evt, args) =>
-            {
-                // Automatically check "Select All" if all row checkboxes are selected
-                if (AreAllCheckboxesSelected())
-                {
-                    SelectAllCheckbox.IsChecked = true;
-                }
-                UpdateSelectionCount();
-            };
-
-            checkbox.Unchecked += (evt, args) =>
-            {
-                // Uncheck "Select All" if any row checkbox is deselected
-                SelectAllCheckbox.IsChecked = false;
-                UpdateSelectionCount();
-            };
-
-            Grid.SetColumn(checkbox, 0);
-            rowGrid.Children.Add(checkbox);
-
-            // Add Image
-            var img = new Image
-            {
-                Width = 100,
-                Height = 100,
-                Source = new BitmapImage(new Uri("pack://application:,,,/Resources/Images/search.png", UriKind.Absolute)),
-                Margin = new Thickness(5),
-                Stretch = Stretch.UniformToFill
-            };
-            Grid.SetColumn(img, 1);
-            rowGrid.Children.Add(img);
-
-            // Add Wrapping Title
-            var textBlock = new TextBlock
-            {
-                Text = "Smaller and cheaper dev machine that runs LLMs and handles AI workloads efficiently.",
-                TextWrapping = TextWrapping.Wrap,
-                MaxWidth = 400,
-                Margin = new Thickness(5),
-                Foreground = Brushes.Black,
-                FontSize = 14,
-                FontWeight = FontWeights.Medium
-            };
-            Grid.SetColumn(textBlock, 2);
-            rowGrid.Children.Add(textBlock);
-
-            // Add ComboBox 1
-            var combo1 = new ComboBox
-            {
-                ItemsSource = new[] { "Option 1", "Option 2", "Option 3" },
-                SelectedIndex = 0,
-                Margin = new Thickness(5),
-                Width = 150
-            };
-            Grid.SetColumn(combo1, 3);
-            rowGrid.Children.Add(combo1);
-
-            // Add ComboBox 2
-            var combo2 = new ComboBox
-            {
-                ItemsSource = new[] { "Value A", "Value B", "Value C" },
-                SelectedIndex = 0,
-                Margin = new Thickness(5),
-                Width = 150
-            };
-            Grid.SetColumn(combo2, 4);
-            rowGrid.Children.Add(combo2);
-
-            // Add Grid inside Border
-            rowBorder.Child = rowGrid;
-
-            // Add row to the container
-            RowsContainer.Children.Add(rowBorder);
-
-            // Update the selection count
-            UpdateSelectionCount();
+            
         }
 
 
