@@ -41,7 +41,6 @@ namespace YTDL
         {
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.Description = "Select Download Directory";
-            //folderBrowserDialog.RootFolder = Environment.SpecialFolder.MyComputer;
             folderBrowserDialog.ShowNewFolderButton = true;
             DialogResult result = folderBrowserDialog.ShowDialog();
             if (result == System.Windows.Forms.DialogResult.OK)
@@ -51,22 +50,29 @@ namespace YTDL
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            String filePath = DirectoryPicker();
-            if (filePath != null)
+            if (Properties.Settings.Default.DownloadDirectory == "")
             {
-                int status = await ytdl.DownloadAndProcessVideo(
-                    audioComboBox.SelectedItem.ToString(), 
-                    videoComboBox.SelectedItem.ToString(), 
-                    filePath, 
-                    progressBar, 
-                    statusLbl
-                );
+                String filePath = DirectoryPicker();
+                DialogResult result =  System.Windows.Forms.MessageBox.Show("Chosen Directory For Downloads : " + filePath + "\nWould you like to always save videos here?", "Download Location", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                Properties.Settings.Default.DownloadDirectory = filePath;
+                Properties.Settings.Default.Save();
+                //if (filePath != null)
+                //{
+                //    int status = await ytdl.DownloadAndProcessVideo(
+                //        audioComboBox.SelectedItem.ToString(),
+                //        videoComboBox.SelectedItem.ToString(),
+                //        filePath,
+                //        progressBar,
+                //        statusLbl
+                //    );
 
-                if (status == 0)
-                    System.Windows.MessageBox.Show("Video Downloaded Successfully ...");
-                else
-                    System.Windows.MessageBox.Show("Failed To Download Video !!!");
+                //    if (status == 0)
+                //        System.Windows.MessageBox.Show("Video Downloaded Successfully ...");
+                //    else
+                //        System.Windows.MessageBox.Show("Failed To Download Video !!!");
+                //}
             }
+            
         }
     }
 }

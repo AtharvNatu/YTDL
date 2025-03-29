@@ -31,19 +31,21 @@ namespace YTDL
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            //if (ytdl.IsValidUrl(URLTxtBox.Text))
-            //{
-                //DownloadType status = await ytdl.SearchVideo(URLTxtBox.Text);
-                DownloadType status = await ytdl.SearchVideo("https://www.youtube.com/playlist?list=PLPwbI_iIX3aRokbT-9j_MfiNcbCn_OtC1");
+            String url = URLTxtBox.Text;
+            if (ytdl.IsValidUrl(url))
+            {
+                DownloadType status = await ytdl.SearchVideo(url);
+                //DownloadType status = await ytdl.SearchVideo("https://www.youtube.com/playlist?list=PLPwbI_iIX3aRokbT-9j_MfiNcbCn_OtC1");
+                //DownloadType status = await ytdl.SearchVideo("https://www.youtube.com/playlist?list=PLPwbI_iIX3aRdiCRnMtbcbUi0fZnck1H3");
                 if (status == DownloadType.single)
                     new VideoDownload().Show();
                 else
                     new PlaylistDownload().Show();
-            //}
-            //else
-            //{
-            //    MessageBox.Show("Please Enter Valid URL !!!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //}
-        }
+            }
+            else
+            {
+                MessageBox.Show("Please Enter Valid URL !!!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+}
     }
 }
