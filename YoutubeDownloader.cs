@@ -6,8 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -20,6 +18,12 @@ namespace YTDL
     {
         single,
         playlist
+    };
+
+    enum Status
+    {
+       invalidURL = -1,
+       success = 0
     };
 
     internal class YoutubeDownloader
@@ -62,11 +66,14 @@ namespace YTDL
         private List<VideoOnlyStreamInfo> videoOnlyStreamInfo;
         private VideoOnlyStreamInfo videoTrack;
 
+        public Status status;
+        public String alertMessage;
+
         public static YoutubeDownloader GetInstance()
         {
             if (_instance == null)
             {
-                lock(_instanceLock)
+                lock (_instanceLock)
                 {
                     if (_instance == null)
                     {
@@ -151,7 +158,7 @@ namespace YTDL
                 .Where(s => s.Container.Name != "webm")
                 .ToList();
 
-            foreach(var stream in audioOnlyStreamInfo)
+            foreach (var stream in audioOnlyStreamInfo)
             {
                 audioQualities.Add((int)Math.Ceiling(stream.Bitrate.KiloBitsPerSecond));
                 audioSize.Add((int)Math.Ceiling(stream.Size.MegaBytes));
@@ -207,7 +214,7 @@ namespace YTDL
             statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Audio ..."; });
             await DownloadAudioTrack(selectedAudio, path, progressBar);
 
-            progressBar.Dispatcher.Invoke(() => {progressBar.Value = 0;});
+            progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
             statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Video ..."; });
             await DownloadVideoTrack(selectedVideo, path, progressBar);
 
@@ -283,7 +290,7 @@ namespace YTDL
             foreach (var videoStreamOption in videoOnlyStreamInfo)
             {
                 if (selectedVideoPixels == videoStreamOption.VideoQuality.Label
-                    && 
+                    &&
                     selectedVideoSize == videoStreamOption.Size.ToString())
                 {
                     videoTrack = videoStreamOption;
@@ -326,7 +333,7 @@ namespace YTDL
             {
                 File.Create(outputFilePath).Dispose();
             }
-               
+
             string exePath = @"ffmpeg.exe";
             string command = $"-i \"{videoFilePath}\" -i \"{audioFilePath} \" -c:v copy -c:a aac -y \"{outputFilePath}\"";
 
@@ -355,7 +362,7 @@ namespace YTDL
                     return -1;
             }
         }
-        
+
         public BitmapImage GetThumbnail(int index)
         {
             BitmapImage bitmap = new BitmapImage();
@@ -365,7 +372,7 @@ namespace YTDL
                 bitmap.UriSource = new Uri(video.Thumbnails.TryGetWithHighestResolution().Url);
             else
                 bitmap.UriSource = new Uri(playlistVideos.ElementAt(index).Thumbnails.TryGetWithHighestResolution().Url);
-            
+
             bitmap.CacheOption = BitmapCacheOption.Default;
             bitmap.EndInit();
 
@@ -387,6 +394,19 @@ namespace YTDL
             return Uri.TryCreate(url, UriKind.Absolute, out Uri uriResult)
                    && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
         }
+
+        public void SetStatus(Status status)
+        { 
+            this.status = status;
+            switch ((int)GetStatus())
+            {
+                case -1: alertMessage = "Please Enter Valid URL !!!"; break;
+                case 2: alertMessage = "Please Enter Valid URL"; break;
+                case 3: alertMessage = "Please Enter Valid URL"; break;
+            }
+        }
+
+        public Status GetStatus() { return this.status; }
     }
 
     internal class DelegateProgress<T> : IProgress<T>

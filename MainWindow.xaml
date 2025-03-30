@@ -6,13 +6,39 @@
         xmlns:local="clr-namespace:YTDL"
         mc:Ignorable="d"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="YTDL : YouTube Downloader" Height="700" Width="1000" WindowStartupLocation="CenterScreen" HorizontalAlignment="Center" VerticalAlignment="Center">
-    <Grid>
+        Title="YTDL : YouTube Downloader" Height="700" Width="1000" WindowStartupLocation="CenterScreen" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize">
+    <Grid Background="#FFFDFDFD">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="11*"/>
-            <ColumnDefinition Width="149*"/>
+            <ColumnDefinition Width="0*"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="URLTxtBox" Grid.Column="1" HorizontalAlignment="Left" Margin="123,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="591" Height="37"/>
-        <Button Grid.Column="1" Content="Button" HorizontalAlignment="Left" Margin="336,531,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="Button_Click"/>
+        <TextBox x:Name="urlTextBox" Grid.Column="1" HorizontalAlignment="Center" Margin="0,396,0,0" VerticalAlignment="Top" Width="854" Text="Enter Video URL" BorderThickness="1,1,1,1" CaretBrush="#FFFF2207" SelectionBrush="#FFA9DDFA" Style="{DynamicResource MaterialDesignOutlinedTextBox}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" HorizontalScrollBarVisibility="Auto" Height="37" Padding="5,0,0,0" ScrollViewer.CanContentScroll="True"/>
+        
+        <Button x:Name="pasteURLButton" Grid.Column="1" HorizontalAlignment="Left" Margin="156,531,0,0" VerticalAlignment="Top" Height="60" Width="170
+                " Click="PasteEventHandler" Background="#FF7393B3" BorderBrush="#FF646464" FontSize="16">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="/paste.png" Margin="0,0,10,0" Width="32"/>
+                <TextBlock Text="Paste URL" VerticalAlignment="Center" FontSize="16"/>
+            </StackPanel>
+        </Button>
+        
+        <Button x:Name="clearURLButton" Grid.Column="1" HorizontalAlignment="Center" Margin="0,531,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="ClearEventHandler" Background="#FF7393B3" BorderBrush="#FF646464" FontSize="16">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="/delete.png" Margin="0,0,10,0" Width="32"/>
+                <TextBlock Text="Clear URL" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+        
+        <Button x:Name="searchButton" Grid.Column="1" HorizontalAlignment="Left" Margin="663,531,0,0" VerticalAlignment="Top" Height="60" Width="185" Click="SearchEventHandler" Background="#FF7393B3" BorderBrush="#FF646464" FontSize="16">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Image Source="/search.png" Margin="0,0,10,0" Width="32"/>
+                <TextBlock Text="Search Video" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+        
+        <Image Grid.Column="1" Height="150" HorizontalAlignment="Center" Width="150" Margin="0,106,0,428" Source="/youtube.png"/>
+        
+        <Label Content="YouTube Video Downloader" HorizontalAlignment="Center" Margin="0,261,0,0" VerticalAlignment="Top" Grid.Column="1" FontSize="24" FontWeight="Bold" Foreground="#E5F13333"/>
+        
     </Grid>
 </Window>
