@@ -9,7 +9,7 @@ namespace YTDL
     /// </summary>
     public partial class MainWindow : Window
     {
-        private YoutubeDownloader ytdl;
+        private readonly YoutubeDownloader ytdl;
 
         public MainWindow()
         {
@@ -25,7 +25,12 @@ namespace YTDL
             String url = urlTextBox.Text;
             if (ytdl.IsValidUrl(url))
             {
+                ytdl.SetStatus(Status.fetchingVideo);
+                //var alertDialog = new AlertDialog().ShowDialog();
+
                 DownloadType status = await ytdl.SearchVideo(url);
+                //alertDialog.Close();
+
                 if (status == DownloadType.single)
                     new VideoDownload().Show();
                 else

@@ -3,11 +3,49 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:YTDL"
         mc:Ignorable="d"
-        Title="AlertDialog" Height="200" Width="300" HorizontalAlignment="Center" VerticalAlignment="Center" WindowStyle="None" WindowStartupLocation="CenterScreen">
-    <Grid Background="#FFEDEDED">
-        <TextBlock x:Name="msgTxtBlock" HorizontalAlignment="Center" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Center" Foreground="Red" FontSize="20" FontWeight="Bold"/>
-        <StackPanel x:Name="ButtonContainer" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20" />
+        Title="AlertDialog" 
+        Width="350" 
+        Height="220" 
+        WindowStyle="None" 
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="NoResize" 
+        AllowsTransparency="True" 
+        Background="Transparent" ShowInTaskbar="False">
+
+    <Grid>
+        <!-- Round Border -->
+        <Border 
+            CornerRadius="20"
+            Background="White" 
+            BorderBrush="Gray" 
+            BorderThickness="2"
+            Margin="10">
+
+            <Border.Effect>
+                <DropShadowEffect Color="Black" 
+                                  BlurRadius="15" 
+                                  ShadowDepth="5" 
+                                  Opacity="0.5" />
+            </Border.Effect>
+
+            <Grid>
+                <TextBlock x:Name="msgTxtBlock" 
+                           HorizontalAlignment="Center" 
+                           Text="Custom Dialog Box" 
+                           VerticalAlignment="Center" 
+                           Foreground="#FFFA2C2C" 
+                           FontSize="18" 
+                           Margin="10,10,10,30" TextWrapping="Wrap" TextAlignment="Center"/>
+
+                <StackPanel x:Name="ButtonContainer" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Bottom" 
+                            Margin="0,0,0,20">
+       
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

@@ -22,8 +22,12 @@ namespace YTDL
 
     enum Status
     {
-       invalidURL = -1,
-       success = 0
+       success,
+       invalidURL,
+       fetchingVideo,
+       failedToFetchVideo,
+       failedToFetchPlaylist,
+       failedToProcessVideo
     };
 
     internal class YoutubeDownloader
@@ -379,6 +383,11 @@ namespace YTDL
             return bitmap;
         }
 
+        public String GetVideoTitle()
+        {
+            return video.Title;
+        }
+
         private void ClearCollections()
         {
             this.audioOptions.Clear();
@@ -400,9 +409,11 @@ namespace YTDL
             this.status = status;
             switch ((int)GetStatus())
             {
-                case -1: alertMessage = "Please Enter Valid URL !!!"; break;
-                case 2: alertMessage = "Please Enter Valid URL"; break;
-                case 3: alertMessage = "Please Enter Valid URL"; break;
+                case 1: alertMessage = "Please Enter Valid URL !!!"; break;
+                case 2: alertMessage = "Please Wait"; break;
+                case 3: alertMessage = "Failed To Get The Video You Requested 😞 ... Please Try Again Later"; break;
+                case 4: alertMessage = "Failed To Get The Playlist You Requested 😞 ... Please Try Again Later"; break;
+                case 5: alertMessage = "Failed To Process The Video You Requested 😞 ... Please Try Again Later"; break;
             }
         }
 

@@ -28,7 +28,10 @@ namespace YTDL
 
             ytdl = YoutubeDownloader.GetInstance();
 
+            this.FontFamily = new System.Windows.Media.FontFamily("Poppins");
+
             thumbnail.Source = ytdl.GetThumbnail(0);
+            titleLabel.Text = ytdl.GetVideoTitle();
 
             audioComboBox.ItemsSource = ytdl.audioOptions;
             audioComboBox.SelectedItem = ytdl.selectedAudioQuality;
