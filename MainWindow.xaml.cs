@@ -18,6 +18,8 @@ namespace YTDL
             ytdl = YoutubeDownloader.GetInstance();
 
             this.FontFamily = new System.Windows.Media.FontFamily("Poppins");
+
+            ToggleWaitControls(false);
         }
 
         private async void SearchEventHandler(object sender, RoutedEventArgs e)
@@ -26,17 +28,23 @@ namespace YTDL
             if (ytdl.IsValidUrl(url))
             {
                 ytdl.SetStatus(Status.fetchingVideo);
-                //var alertDialog = new AlertDialog().ShowDialog();
+                ToggleWaitControls(true);
 
-                DownloadType status = await ytdl.SearchVideo(url);
-                //alertDialog.Close();
-
-                if (status == DownloadType.single)
-                    new VideoDownload().Show();
+                DownloadType downloadType = await ytdl.SearchVideo(url);
+                if (downloadType == DownloadType.error)
+                    System.Windows.Application.Current.Shutdown();
                 else
-                    new PlaylistDownload().Show();
+                {
+                    ToggleWaitControls(false);
+                    new VideoDownload().ShowDialog();
+                    ytdl.SetStatus(Status.success);
+                }
 
-                ytdl.SetStatus(Status.success);
+                //if (status == DownloadType.single)
+                //    new VideoDownload().Show();
+                //else
+                //    new PlaylistDownload().Show();
+
             }
             else
             {
@@ -56,6 +64,25 @@ namespace YTDL
         private void ClearEventHandler(object sender, RoutedEventArgs e)
         {
             urlTextBox.Clear();
+        }
+
+        private void SettingsEventHandler(object sender, RoutedEventArgs e)
+        {
+            new Settings().ShowDialog();
+        }
+
+        private void ToggleWaitControls(bool show)
+        {
+            if (show)
+            {
+                this.progressBar.Visibility = Visibility.Visible;
+                this.waitTxtBlock.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                this.progressBar.Visibility = Visibility.Hidden;
+                this.waitTxtBlock.Visibility = Visibility.Hidden;
+            }
         }
     }
 }

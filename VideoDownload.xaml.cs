@@ -38,44 +38,57 @@ namespace YTDL
 
             videoComboBox.ItemsSource = ytdl.videoOptions;
             videoComboBox.SelectedItem = ytdl.selectedVideoQuality;
+
+            ToggleProgressControls(false);
         }
 
-        private String DirectoryPicker()
+        private async void DownloadEventHandler(object sender, RoutedEventArgs e)
         {
-            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
-            folderBrowserDialog.Description = "Select Download Directory";
-            folderBrowserDialog.ShowNewFolderButton = true;
-            DialogResult result = folderBrowserDialog.ShowDialog();
-            if (result == System.Windows.Forms.DialogResult.OK)
-                return folderBrowserDialog.SelectedPath;
-            return null;
-        }
+            String filePath = null;
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
-        {
-            if (Properties.Settings.Default.DownloadDirectory == "")
+            if (Helper.downloadOption == DownloadOption.newLocation)
+                filePath = Helper.DirectoryPicker();
+            else if (Helper.downloadOption == DownloadOption.defaultLocation)
+                filePath = Helper.GetDefaultDirectoryPath();
+
+            if (filePath != null || filePath != "")
             {
-                String filePath = DirectoryPicker();
-                DialogResult result =  System.Windows.Forms.MessageBox.Show("Chosen Directory For Downloads : " + filePath + "\nWould you like to always save videos here?", "Download Location", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                Properties.Settings.Default.DownloadDirectory = filePath;
-                Properties.Settings.Default.Save();
-                //if (filePath != null)
-                //{
-                //    int status = await ytdl.DownloadAndProcessVideo(
-                //        audioComboBox.SelectedItem.ToString(),
-                //        videoComboBox.SelectedItem.ToString(),
-                //        filePath,
-                //        progressBar,
-                //        statusLbl
-                //    );
+                ToggleProgressControls(true);
+                statusLbl.Content = "Downloading Audio ...";
 
-                //    if (status == 0)
-                //        System.Windows.MessageBox.Show("Video Downloaded Successfully ...");
-                //    else
-                //        System.Windows.MessageBox.Show("Failed To Download Video !!!");
-                //}
+                int status = await ytdl.DownloadAndProcessVideo(
+                    audioComboBox.SelectedItem.ToString(),
+                    videoComboBox.SelectedItem.ToString(),
+                    filePath,
+                    progressBar,
+                    statusLbl
+                );
+
+                if (status == 0)
+                {
+                    ToggleProgressControls(false);
+                    ytdl.SetStatus(Status.downloadSucceeded);
+                }
+                    
+                else
+                    ytdl.SetStatus(Status.failedToDownloadVideo);
+
+                new AlertDialog().ShowDialog();
             }
-            
+        }
+
+        private void ToggleProgressControls(bool show)
+        {
+            if (show)
+            {
+                this.progressBar.Visibility = Visibility.Visible;
+                this.statusLbl.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                this.progressBar.Visibility = Visibility.Hidden;
+                this.statusLbl.Visibility = Visibility.Hidden;
+            }
         }
     }
 }

@@ -34,7 +34,7 @@
                            HorizontalAlignment="Center" 
                            Text="Custom Dialog Box" 
                            VerticalAlignment="Center" 
-                           Foreground="#FFFA2C2C" 
+                           Foreground="Red" 
                            FontSize="18" 
                            Margin="10,10,10,30" TextWrapping="Wrap" TextAlignment="Center"/>
 

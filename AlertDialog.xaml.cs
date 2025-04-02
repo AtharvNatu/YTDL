@@ -21,7 +21,7 @@ namespace YTDL
     public partial class AlertDialog : Window
     {
         private YoutubeDownloader ytdl;
-        private SolidColorBrush redBrush, greenBrush, blueGrayBrush;
+        private SolidColorBrush redBrush, greenBrush;
 
         public AlertDialog()
         {
@@ -32,9 +32,8 @@ namespace YTDL
 
             Status status = ytdl.GetStatus();
 
-            redBrush = new SolidColorBrush(Color.FromRgb(254, 100, 89));
-            greenBrush = new SolidColorBrush(Color.FromRgb(61, 212, 114));
-            blueGrayBrush = new SolidColorBrush(Color.FromRgb(116, 147, 179));
+            redBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+            greenBrush = new SolidColorBrush(Color.FromRgb(76, 177, 58));
 
             switch (status)
             {
@@ -42,17 +41,15 @@ namespace YTDL
                     msgTxtBlock.Foreground = greenBrush;
                     break;
 
-                case Status.invalidURL:
-                case Status.failedToFetchVideo:
-                    msgTxtBlock.Foreground = redBrush;
+                case Status.downloadSucceeded:
+                    msgTxtBlock.Foreground = greenBrush;
                     AddButtons(true, false);
                     break;
 
-                case Status.fetchingVideo:
-                    msgTxtBlock.Foreground = blueGrayBrush;
-                    AddSpinner();
+                default:
+                    msgTxtBlock.Foreground = redBrush;
+                    AddButtons(true, false);
                     break;
-
             }
 
             msgTxtBlock.Text = ytdl.alertMessage;
@@ -110,43 +107,6 @@ namespace YTDL
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
 
-        }
-
-        private void AddSpinner()
-        {
-            ButtonContainer.Children.Clear();
-
-            var spinner = new Canvas
-            {
-                Width = 60,
-                Height = 60
-            };
-
-            var circle = new Path
-            {
-                Stroke = Brushes.DarkBlue,
-                StrokeThickness = 4,
-                Data = new EllipseGeometry(new Point(30, 30), 20, 20)
-            };
-
-            // Animation
-            var rotateTransform = new RotateTransform();
-            circle.RenderTransform = rotateTransform;
-            circle.RenderTransformOrigin = new Point(0.5, 0.5);
-
-            var animation = new DoubleAnimation
-            {
-                From = 0,
-                To = 360,
-                Duration = TimeSpan.FromSeconds(1),
-                RepeatBehavior = RepeatBehavior.Forever
-            };
-
-            rotateTransform.BeginAnimation(RotateTransform.AngleProperty, animation);
-
-            spinner.Children.Add(circle);
-
-            ButtonContainer.Children.Add(spinner);
         }
     }
 }

@@ -12,33 +12,51 @@
             <ColumnDefinition Width="0*"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="urlTextBox" Grid.Column="1" HorizontalAlignment="Center" Margin="0,396,0,0" VerticalAlignment="Top" Width="854" Text="Enter Video URL" BorderThickness="1,1,1,1" CaretBrush="#FFFF2207" SelectionBrush="#FFA9DDFA" Style="{DynamicResource MaterialDesignOutlinedTextBox}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" HorizontalScrollBarVisibility="Auto" Height="37" Padding="5,0,0,0" ScrollViewer.CanContentScroll="True"/>
-        
-        <Button x:Name="pasteURLButton" Grid.Column="1" HorizontalAlignment="Left" Margin="156,531,0,0" VerticalAlignment="Top" Height="60" Width="170
+        <TextBox x:Name="urlTextBox" Grid.Column="1" HorizontalAlignment="Center" Margin="0,342,0,0" VerticalAlignment="Top" Width="854" Text="Enter Video URL" BorderThickness="1,1,1,1" CaretBrush="#FFFF2207" SelectionBrush="#FFA9DDFA" Style="{DynamicResource MaterialDesignOutlinedTextBox}" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" HorizontalScrollBarVisibility="Auto" Height="37" Padding="5,0,0,0" ScrollViewer.CanContentScroll="True"/>
+
+        <Button x:Name="pasteURLButton" Grid.Column="1" HorizontalAlignment="Left" Margin="143,461,0,0" VerticalAlignment="Top" Height="60" Width="170
                 " Click="PasteEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Image Source="/paste.png" Margin="0,0,10,0" Width="32"/>
                 <TextBlock Text="Paste URL" VerticalAlignment="Center" FontSize="16"/>
             </StackPanel>
         </Button>
-        
-        <Button x:Name="clearURLButton" Grid.Column="1" HorizontalAlignment="Center" Margin="0,531,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="ClearEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
+
+        <Button x:Name="clearURLButton" Grid.Column="1" HorizontalAlignment="Left" Margin="425,461,0,0" VerticalAlignment="Top" Height="60" Width="172" Click="ClearEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Image Source="/delete.png" Margin="0,0,10,0" Width="32"/>
                 <TextBlock Text="Clear URL" VerticalAlignment="Center"/>
             </StackPanel>
         </Button>
-        
-        <Button x:Name="searchButton" Grid.Column="1" HorizontalAlignment="Left" Margin="663,531,0,0" VerticalAlignment="Top" Height="60" Width="185" Click="SearchEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
+
+        <Button x:Name="searchButton" Grid.Column="1" HorizontalAlignment="Left" Margin="705,461,0,0" VerticalAlignment="Top" Height="60" Width="185" Click="SearchEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Image Source="/search.png" Margin="0,0,10,0" Width="32"/>
                 <TextBlock Text="Search Video" VerticalAlignment="Center"/>
             </StackPanel>
         </Button>
-        
-        <Image Grid.Column="1" Height="150" HorizontalAlignment="Center" Width="150" Margin="0,106,0,428" Source="/youtube.png"/>
-        
-        <Label Content="YouTube Video Downloader" HorizontalAlignment="Center" Margin="0,261,0,0" VerticalAlignment="Top" Grid.Column="1" FontSize="24" FontWeight="Bold" Foreground="#E5F13333"/>
-        
+
+        <Button x:Name="settingsButton" Grid.Column="1" HorizontalAlignment="Left" Margin="931,12,0,0" VerticalAlignment="Top" Height="46" Width="46" Click="SettingsEventHandler" Background="#FFC7D6E5" BorderBrush="Black" FontSize="16" Style="{DynamicResource MaterialDesignIconButton}" Foreground="#FFC7D6E5">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Image Source="/settings.png" Width="54" RenderTransformOrigin="0.891,0.483" Height="39"/>
+            </StackPanel>
+        </Button>
+
+        <Image Grid.Column="1" Height="150" HorizontalAlignment="Center" Width="150" Margin="0,50,0,484" Source="/youtube.png"/>
+
+        <Label Content="YouTube Video Downloader" HorizontalAlignment="Center" Margin="0,205,0,0" VerticalAlignment="Top" Grid.Column="1" FontSize="24" FontWeight="Bold" Foreground="#E5F13333"/>
+
+        <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" VerticalAlignment="Top" Style="{DynamicResource MaterialDesignCircularProgressBar}" RenderTransformOrigin="0.5,0.5" Foreground="#FFF16951" Grid.Column="1" Margin="0,600,0,0" Width="50" IsIndeterminate="True">
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
+        <TextBlock x:Name="waitTxtBlock" HorizontalAlignment="Center" Margin="0,631,0,0" TextWrapping="Wrap" Text="Please Wait" VerticalAlignment="Top" Grid.Column="1" FontSize="18" FontWeight="Bold"/>
+
     </Grid>
 </Window>

@@ -17,7 +17,8 @@ namespace YTDL
     enum DownloadType
     {
         single,
-        playlist
+        playlist,
+        error
     };
 
     enum Status
@@ -27,7 +28,9 @@ namespace YTDL
        fetchingVideo,
        failedToFetchVideo,
        failedToFetchPlaylist,
-       failedToProcessVideo
+       failedToProcessVideo,
+       downloadSucceeded,
+       failedToDownloadVideo
     };
 
     internal class YoutubeDownloader
@@ -117,19 +120,33 @@ namespace YTDL
             else
             {
                 downloadType = DownloadType.single;
-                await GetVideo(url);
+                if (await GetVideo(url))
+                    return downloadType;
+                else
+                    return DownloadType.error;
             }
 
             return downloadType;
         }
 
-        public async Task GetVideo(String url)
+        public async Task<bool> GetVideo(String url)
         {
-            this.video = await yt.Videos.GetAsync(url);
-            StreamManifest streamManifest = await yt.Videos.Streams.GetManifestAsync(url);
-            ClearCollections();
-            GetAudioStream(streamManifest);
-            GetVideoStream(streamManifest);
+            try
+            {
+                this.video = await yt.Videos.GetAsync(url);
+                StreamManifest streamManifest = await yt.Videos.Streams.GetManifestAsync(url);
+                ClearCollections();
+                GetAudioStream(streamManifest);
+                GetVideoStream(streamManifest);
+            }
+            catch (Exception e)
+            {
+                this.SetStatus(Status.failedToFetchVideo);
+                new AlertDialog().ShowDialog();
+                return false;
+            }
+
+            return true;
         }
 
         public async Task GetVideos(String url)
@@ -216,10 +233,14 @@ namespace YTDL
         {
             progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
             statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Audio ..."; });
-            await DownloadAudioTrack(selectedAudio, path, progressBar);
+            bool status = await DownloadAudioTrack(selectedAudio, path, progressBar);
 
-            progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
-            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Video ..."; });
+            if (status)
+            {
+                progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
+                statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Video ..."; });
+            }
+            
             await DownloadVideoTrack(selectedVideo, path, progressBar);
 
             progressBar.Dispatcher.Invoke(() => { progressBar.Visibility = Visibility.Hidden; });
@@ -227,7 +248,7 @@ namespace YTDL
             return ProcessMedia(path);
         }
 
-        private async Task DownloadAudioTrack(String selectedAudio, String path, System.Windows.Controls.ProgressBar progressBar)
+        private async Task<bool> DownloadAudioTrack(String selectedAudio, String path, System.Windows.Controls.ProgressBar progressBar)
         {
             var selectedAudioAttributes = selectedAudio.Split(':');
             var selectedAudioBitrateList = selectedAudioAttributes.ElementAt(0).Split(' ');
@@ -247,27 +268,27 @@ namespace YTDL
                 }
             }
 
-            var audioFileName = $"{video.Title}_audio_.{audioTrack.Container.Name}"
-                .Replace('\\', '_')
-                .Replace('/', '_')
-                .Replace('*', '_')
-                .Replace('?', '_')
-                .Replace('"', '_')
-                .Replace('<', '_')
-                .Replace('>', '_')
-                .Replace(':', '_')
-                .Replace('|', '_');
+            var audioFileName = $"{video.Title}-audio-.{audioTrack.Container.Name}"
+                .Replace('\\', '-')
+                .Replace('/', '-')
+                .Replace('*', '-')
+                .Replace('?', '-')
+                .Replace('"', '-')
+                .Replace('<', '-')
+                .Replace('>', '-')
+                .Replace(':', '-')
+                .Replace('|', '-');
 
             outputFileName = $"{video.Title}.{audioTrack.Container.Name}"
-                .Replace('\\', '_')
-                .Replace('/', '_')
-                .Replace('*', '_')
-                .Replace('?', '_')
-                .Replace('"', '_')
-                .Replace('<', '_')
-                .Replace('>', '_')
-                .Replace(':', '_')
-                .Replace('|', '_');
+                .Replace('\\', '-')
+                .Replace('/', '-')
+                .Replace('*', '-')
+                .Replace('?', '-')
+                .Replace('"', '-')
+                .Replace('<', '-')
+                .Replace('>', '-')
+                .Replace(':', '-')
+                .Replace('|', '-');
 
             audioFilePath = System.IO.Path.Combine(path, audioFileName);
             FileInfo audioFile = new FileInfo(audioFilePath);
@@ -283,6 +304,8 @@ namespace YTDL
             });
 
             await yt.Videos.Streams.DownloadAsync(audioTrack, audioFilePath, progress);
+
+            return true;
         }
 
         private async Task DownloadVideoTrack(String selectedVideo, String path, System.Windows.Controls.ProgressBar progressBar)
@@ -302,16 +325,16 @@ namespace YTDL
                 }
             }
 
-            var videoFileName = $"{video.Title}_video_.{videoTrack.Container.Name}"
-                .Replace('\\', '_')
-                .Replace('/', '_')
-                .Replace('*', '_')
-                .Replace('?', '_')
-                .Replace('"', '_')
-                .Replace('<', '_')
-                .Replace('>', '_')
-                .Replace(':', '_')
-                .Replace('|', '_');
+            var videoFileName = $"{video.Title}-video-.{videoTrack.Container.Name}"
+                .Replace('\\', '-')
+                .Replace('/', '-')
+                .Replace('*', '-')
+                .Replace('?', '-')
+                .Replace('"', '-')
+                .Replace('<', '-')
+                .Replace('>', '-')
+                .Replace(':', '-')
+                .Replace('|', '-');
 
             videoFilePath = System.IO.Path.Combine(path, videoFileName);
             FileInfo videoFile = new FileInfo(videoFilePath);
@@ -414,6 +437,8 @@ namespace YTDL
                 case 3: alertMessage = "Failed To Get The Video You Requested 😞 ... Please Try Again Later"; break;
                 case 4: alertMessage = "Failed To Get The Playlist You Requested 😞 ... Please Try Again Later"; break;
                 case 5: alertMessage = "Failed To Process The Video You Requested 😞 ... Please Try Again Later"; break;
+                case 6: alertMessage = "Video Downloaded Successfully 😁"; break;
+                case 7: alertMessage = "Failed To Download The Video You Requested 😞"; break;
             }
         }
 
