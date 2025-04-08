@@ -6,24 +6,76 @@
         xmlns:local="clr-namespace:YTDL" xmlns:forms="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
         mc:Ignorable="d"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="Download Video" Height="600" Width="800" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="Download Video" Height="600" Width="1000" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
-        <ComboBox x:Name="audioComboBox" HorizontalAlignment="Left" Margin="527,323,0,0" VerticalAlignment="Top" Width="180" FontSize="14" Height="30" MaxDropDownHeight="500"/>
-        <ComboBox x:Name="videoComboBox" HorizontalAlignment="Left" Margin="527,162,0,0" VerticalAlignment="Top" FontSize="14" MaxDropDownHeight="500" Width="180" Height="30" Style="{DynamicResource MaterialDesignComboBox}"/>
-        <Border HorizontalAlignment="Left" Height="178" Margin="76,137,0,0" VerticalAlignment="Top" Width="324" BorderThickness="1,1,1,1" CornerRadius="5,5,5,5" >
+        <ComboBox x:Name="audioComboBox" HorizontalAlignment="Left" Margin="436,323,0,0" VerticalAlignment="Top" Width="180" FontSize="14" Height="30" MaxDropDownHeight="500"/>
+        <ComboBox x:Name="videoComboBox" HorizontalAlignment="Left" Margin="436,162,0,0" VerticalAlignment="Top" FontSize="14" MaxDropDownHeight="500" Width="180" Height="30" Style="{DynamicResource MaterialDesignComboBox}"/>
+        <Border HorizontalAlignment="Left" Height="178" Margin="50,137,0,0" VerticalAlignment="Top" Width="324" BorderThickness="1,1,1,1" CornerRadius="5,5,5,5" >
             <Image x:Name="thumbnail" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
-        <Button x:Name="settingsButton" HorizontalAlignment="Center" Margin="0,476,0,0" VerticalAlignment="Top" Height="60" Width="172
+        <Button x:Name="settingsButton" HorizontalAlignment="Center" Margin="0,456,0,0" VerticalAlignment="Top" Height="60" Width="172
         " Click="DownloadEventHandler" Background="#FF7393B3" BorderBrush="Black" FontSize="16">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Image Source="/download.png" Margin="0,0,10,0" Width="32"/>
                 <TextBlock Text="Download" VerticalAlignment="Center"/>
             </StackPanel>
         </Button>
-        <Label Content="Video Quality" HorizontalAlignment="Left" Margin="559,122,0,0" VerticalAlignment="Top" Height="33" FontSize="16" FontWeight="Bold"/>
-        <Label Content="Audio Quality" HorizontalAlignment="Left" Margin="560,281,0,0" VerticalAlignment="Top" Height="34" FontSize="16" FontWeight="Bold"/>
-        <Label x:Name="statusLbl" Content="Download Status" HorizontalAlignment="Center" Margin="0,381,0,0" VerticalAlignment="Top" Height="33" FontSize="16" FontWeight="Bold"/>
+        <Label Content="Video Quality" HorizontalAlignment="Left" Margin="468,122,0,0" VerticalAlignment="Top" Height="33" FontSize="16" FontWeight="Bold"/>
+        <Label Content="Audio Quality" HorizontalAlignment="Left" Margin="469,281,0,0" VerticalAlignment="Top" Height="34" FontSize="16" FontWeight="Bold"/>
         <TextBlock x:Name="titleLabel" Text="Title" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="20" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center" Padding="20,10,20,10" Margin="0,10,0,0"/>
-        <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="20" Margin="0,419,0,0" VerticalAlignment="Top" Style="{DynamicResource MaterialDesignLinearProgressBar}" BorderThickness="3,3,3,3" Foreground="#FF4CB13A" Width="400" Background="White" BorderBrush="White"/>
+        <Rectangle x:Name="rect" HorizontalAlignment="Left" Height="243" Margin="665,110,0,0"  Stroke="#FF7393B3" VerticalAlignment="Top" Width="298" StrokeThickness="2" StrokeEndLineCap="Round" StrokeDashCap="Round" StrokeLineJoin="Round"/>
+        <TextBlock x:Name="status1" HorizontalAlignment="Left" Margin="688,145,0,0" TextWrapping="Wrap" Text="Downloading Audio" VerticalAlignment="Top" FontSize="16"/>
+        <TextBlock x:Name="status2" HorizontalAlignment="Left" Margin="688,195,0,0" TextWrapping="Wrap" Text="Downloading Video" VerticalAlignment="Top" FontSize="16" Foreground="#E5000000"/>
+        <TextBlock x:Name="status3" HorizontalAlignment="Left" Margin="688,245,0,0" TextWrapping="Wrap" Text="Processing : Stage - 1" VerticalAlignment="Top" FontSize="16"/>
+        <TextBlock x:Name="status4" HorizontalAlignment="Left" Margin="688,295,0,0" TextWrapping="Wrap" Text="Processing : Stage - 2" VerticalAlignment="Top" FontSize="16"/>
+        <Image x:Name="img1" HorizontalAlignment="Left" Height="24" Margin="924,144,0,0" VerticalAlignment="Top" Width="22" Source="/correct.png"/>
+        <Image x:Name="img2" HorizontalAlignment="Left" Height="24" Margin="924,194,0,0" VerticalAlignment="Top" Width="22" Source="/correct.png"/>
+        <Image x:Name="img3" HorizontalAlignment="Left" Height="24" Margin="924,243,0,0" VerticalAlignment="Top" Width="22" Source="/correct.png"/>
+        <Image x:Name="img4" HorizontalAlignment="Left" Height="24" Margin="924,294,0,0" VerticalAlignment="Top" Width="22" Source="/correct.png"/>
+        <ProgressBar x:Name="prg1" HorizontalAlignment="Left" Height="74" Margin="875,92,0,0" VerticalAlignment="Top" Width="28" Style="{DynamicResource MaterialDesignCircularProgressBar}" Foreground="#FFF32828" IsIndeterminate="True" RenderTransformOrigin="0.5,0.5">
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
+        <ProgressBar x:Name="prg2" HorizontalAlignment="Left" Height="74" Margin="875,144,0,0" VerticalAlignment="Top" Width="28" Style="{DynamicResource MaterialDesignCircularProgressBar}" Foreground="#FFF32828" IsIndeterminate="True" RenderTransformOrigin="0.5,0.5">
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
+        <ProgressBar x:Name="prg3" HorizontalAlignment="Left" Height="74" Margin="875,194,0,0" VerticalAlignment="Top" Width="28" Style="{DynamicResource MaterialDesignCircularProgressBar}" Foreground="#FFF32828" IsIndeterminate="True" RenderTransformOrigin="0.5,0.5">
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
+        <ProgressBar x:Name="prg4" HorizontalAlignment="Left" Height="74" Margin="875,244,0,0" VerticalAlignment="Top" Width="28" Style="{DynamicResource MaterialDesignCircularProgressBar}" Foreground="#FFF32828" IsIndeterminate="True" RenderTransformOrigin="0.5,0.5">
+            <ProgressBar.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleY="-1"/>
+                    <SkewTransform/>
+                    <RotateTransform/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </ProgressBar.RenderTransform>
+        </ProgressBar>
+        <Button x:Name="backButton" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="46" Width="46" Click="BackEventHandler" Background="#FFC7D6E5" BorderBrush="Black" FontSize="16" Style="{DynamicResource MaterialDesignIconButton}" Foreground="#FFC7D6E5">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Image Source="/previous.png" Width="54" RenderTransformOrigin="0.891,0.483" Height="39"/>
+            </StackPanel>
+        </Button>
     </Grid>
 </Window>

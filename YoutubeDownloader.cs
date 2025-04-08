@@ -229,26 +229,7 @@ namespace YTDL
             }
         }
 
-        public async Task<int> DownloadAndProcessVideo(String selectedAudio, String selectedVideo, String path, System.Windows.Controls.ProgressBar progressBar, System.Windows.Controls.Label statusLbl)
-        {
-            progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
-            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Audio ..."; });
-            bool status = await DownloadAudioTrack(selectedAudio, path, progressBar);
-
-            if (status)
-            {
-                progressBar.Dispatcher.Invoke(() => { progressBar.Value = 0; });
-                statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Downloading Video ..."; });
-            }
-            
-            await DownloadVideoTrack(selectedVideo, path, progressBar);
-
-            progressBar.Dispatcher.Invoke(() => { progressBar.Visibility = Visibility.Hidden; });
-            statusLbl.Dispatcher.Invoke(() => { statusLbl.Content = "Processing ..."; });
-            return ProcessMedia(path);
-        }
-
-        private async Task<bool> DownloadAudioTrack(String selectedAudio, String path, System.Windows.Controls.ProgressBar progressBar)
+        public async Task<bool> DownloadAudioTrack(String selectedAudio, String path)
         {
             var selectedAudioAttributes = selectedAudio.Split(':');
             var selectedAudioBitrateList = selectedAudioAttributes.ElementAt(0).Split(' ');
@@ -295,20 +276,12 @@ namespace YTDL
             if (!audioFile.Exists)
                 File.Create(audioFilePath).Dispose();
 
-            var progress = new DelegateProgress<double>(p =>
-            {
-                progressBar.Dispatcher.Invoke(() =>
-                {
-                    progressBar.Value = p * 100;
-                });
-            });
-
-            await yt.Videos.Streams.DownloadAsync(audioTrack, audioFilePath, progress);
+            await yt.Videos.Streams.DownloadAsync(audioTrack, audioFilePath);
 
             return true;
         }
 
-        private async Task DownloadVideoTrack(String selectedVideo, String path, System.Windows.Controls.ProgressBar progressBar)
+        public async Task<bool> DownloadVideoTrack(String selectedVideo, String path)
         {
             var selectedVideoAttributes = selectedVideo.Split(':');
             var selectedVideoPixels = selectedVideoAttributes.ElementAt(0).Trim();
@@ -341,18 +314,17 @@ namespace YTDL
             if (!videoFile.Exists)
                 File.Create(videoFilePath).Dispose();
 
-            var progress = new DelegateProgress<double>(p =>
-            {
-                progressBar.Dispatcher.Invoke(() =>
-                {
-                    progressBar.Value = p * 100;
-                });
-            });
+            await yt.Videos.Streams.DownloadAsync(videoTrack, videoFilePath);
 
-            await yt.Videos.Streams.DownloadAsync(videoTrack, videoFilePath, progress);
+            return true;
         }
 
-        private int ProcessMedia(String path)
+        public async Task<bool> ProcessTracks(String path)
+        {
+            return await Task.Run(() => ProcessMedia(path));
+        }
+
+        private bool ProcessMedia(String path)
         {
             var outputFilePath = System.IO.Path.Combine(path, outputFileName);
             FileInfo outputFile = new FileInfo(outputFilePath);
@@ -380,14 +352,17 @@ namespace YTDL
                 process.WaitForExit();
                 int exitCode = process.ExitCode;
                 if (exitCode == 0)
-                {
-                    File.Delete(audioFilePath);
-                    File.Delete(videoFilePath);
-                    return 0;
-                }
+                    return true;
                 else
-                    return -1;
+                    return false;
             }
+        }
+
+        public bool DeleteRawFiles()
+        {
+            File.Delete(audioFilePath);
+            File.Delete(videoFilePath);
+            return true;
         }
 
         public BitmapImage GetThumbnail(int index)

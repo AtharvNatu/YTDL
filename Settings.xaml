@@ -6,13 +6,13 @@
         xmlns:local="clr-namespace:YTDL"
         mc:Ignorable="d"
          Style="{StaticResource MaterialDesignWindow}"
-        Title="Download Settings" Height="600" Width="800" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="Download Settings" Height="400" Width="600" HorizontalAlignment="Center" VerticalAlignment="Center" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
-        <RadioButton x:Name="newRadioButton" Content="Ask Where To Save Each Video Before Downloading" HorizontalAlignment="Left" Margin="30,212,0,0" VerticalAlignment="Top" GroupName="SaveOption"/>
-        <Button Content="Apply" HorizontalAlignment="Left" Margin="243,260,0,0" VerticalAlignment="Top" Click="SetDownloadLocationHandler"/>
-        <GroupBox Header="GroupBox" Margin="20,88,294,272">
-            <RadioButton x:Name="defaultRadioButton" Content="Set Default Download Directory" HorizontalAlignment="Left" Margin="0,26,0,0" VerticalAlignment="Top" GroupName="SaveOption" />
-        </GroupBox>
+        <Rectangle HorizontalAlignment="Center" Height="330" Stroke="#FF7393B3" VerticalAlignment="Center" Width="530" StrokeThickness="2" StrokeEndLineCap="Round" StrokeDashCap="Round" StrokeLineJoin="Round"/>
 
+        <RadioButton x:Name="newRadioButton" Content="Ask Where To Save Each Video Before Downloading" HorizontalAlignment="Left" Margin="100,159,0,0" VerticalAlignment="Top" GroupName="SaveOption" FontSize="16" Checked="newRadioButton_Checked"/>
+        <RadioButton x:Name="defaultRadioButton" Content="Set Default Download Directory" HorizontalAlignment="Left" Margin="100,85,0,0" VerticalAlignment="Top" GroupName="SaveOption" FontSize="16" Checked="defaultRadioButton_Checked" />
+        <Button x:Name="applyButton" Content="Apply" HorizontalAlignment="Center" Margin="0,295,0,0" VerticalAlignment="Top" Click="SetDownloadLocationHandler" Background="#FF7393B3" BorderBrush="#FF020202" FontSize="16"/>
+        <TextBlock x:Name="pathTxt" Text="Title" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center" Padding="5,5,5,5" Margin="0,230,0,0"/>
     </Grid>
 </Window>

@@ -55,6 +55,21 @@ namespace YTDL
             msgTxtBlock.Text = ytdl.alertMessage;
         }
 
+        public AlertDialog(String errorText)
+        {
+            InitializeComponent();
+
+            this.FontFamily = new System.Windows.Media.FontFamily("Poppins");
+
+            redBrush = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+            greenBrush = new SolidColorBrush(Color.FromRgb(76, 177, 58));
+
+            msgTxtBlock.Foreground = redBrush;
+            msgTxtBlock.Text = errorText;
+            AddButtons(true, false);
+
+        }
+
         private void AddButtons(bool showOkButton, bool showCancelButton)
         {
             if (showOkButton && showCancelButton)

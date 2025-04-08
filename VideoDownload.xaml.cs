@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace YTDL
     public partial class VideoDownload : Window
     {
         private YoutubeDownloader ytdl;
+        private SolidColorBrush redBrush, greenBrush;
+
 
         public VideoDownload()
         {
@@ -39,7 +42,11 @@ namespace YTDL
             videoComboBox.ItemsSource = ytdl.videoOptions;
             videoComboBox.SelectedItem = ytdl.selectedVideoQuality;
 
-            ToggleProgressControls(false);
+            greenBrush = new SolidColorBrush(Color.FromRgb(76, 177, 58));
+            redBrush = new SolidColorBrush(Color.FromRgb(241, 51, 51));
+
+            ToggleStatusControls(false);
+
         }
 
         private async void DownloadEventHandler(object sender, RoutedEventArgs e)
@@ -53,23 +60,63 @@ namespace YTDL
 
             if (filePath != null || filePath != "")
             {
-                ToggleProgressControls(true);
-                statusLbl.Content = "Downloading Audio ...";
+                ToggleStatusControls(true);
 
-                int status = await ytdl.DownloadAndProcessVideo(
-                    audioComboBox.SelectedItem.ToString(),
-                    videoComboBox.SelectedItem.ToString(),
-                    filePath,
-                    progressBar,
-                    statusLbl
-                );
+                // Download Audio
+                prg1.Visibility = Visibility.Visible;
+                status1.FontWeight = System.Windows.FontWeights.Bold;
+                status1.Foreground = redBrush;
 
-                if (status == 0)
+                bool audioDownloadStatus = await ytdl.DownloadAudioTrack(audioComboBox.SelectedItem.ToString(), filePath);
+                if (audioDownloadStatus)
                 {
-                    ToggleProgressControls(false);
-                    ytdl.SetStatus(Status.downloadSucceeded);
+                    prg1.Visibility = Visibility.Hidden;
+                    img1.Visibility = Visibility.Visible;
+                    status1.Foreground = greenBrush;
+
+                    // Download Video
+                    prg2.Visibility = Visibility.Visible;
+                    status2.FontWeight = System.Windows.FontWeights.Bold;
+                    status2.Foreground = redBrush;
+                    bool videoDownloadStatus = await ytdl.DownloadVideoTrack(videoComboBox.SelectedItem.ToString(), filePath);
+                    if (videoDownloadStatus)
+                    {
+                        prg2.Visibility = Visibility.Hidden;
+                        img2.Visibility = Visibility.Visible;
+                        status2.Foreground = greenBrush;
+
+                        // Process Video
+                        prg3.Visibility = Visibility.Visible;
+                        status3.FontWeight = System.Windows.FontWeights.Bold;
+                        status3.Foreground = redBrush;
+                        bool processingStatus = await ytdl.ProcessTracks(filePath);
+                        if (processingStatus)
+                        {
+                            prg3.Visibility = Visibility.Hidden;
+                            img3.Visibility = Visibility.Visible;
+                            status3.Foreground = greenBrush;
+
+                            // Delete Raw Files
+                            prg4.Visibility = Visibility.Visible;
+                            status4.FontWeight = System.Windows.FontWeights.Bold;
+                            status4.Foreground = redBrush;
+                            bool deleteStatus = ytdl.DeleteRawFiles();
+                            if (deleteStatus)
+                            {
+                                prg4.Visibility = Visibility.Hidden;
+                                img4.Visibility = Visibility.Visible;
+                                status4.Foreground = greenBrush;
+                                ytdl.SetStatus(Status.downloadSucceeded);
+                            }
+                            else
+                                ytdl.SetStatus(Status.failedToDownloadVideo);
+                        }
+                        else
+                            ytdl.SetStatus(Status.failedToDownloadVideo);
+                    }
+                    else
+                        ytdl.SetStatus(Status.failedToDownloadVideo);
                 }
-                    
                 else
                     ytdl.SetStatus(Status.failedToDownloadVideo);
 
@@ -77,17 +124,36 @@ namespace YTDL
             }
         }
 
-        private void ToggleProgressControls(bool show)
+        private void BackEventHandler(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void ToggleStatusControls(bool show)
         {
             if (show)
             {
-                this.progressBar.Visibility = Visibility.Visible;
-                this.statusLbl.Visibility = Visibility.Visible;
+                rect.Visibility = Visibility.Visible;
+                status1.Visibility = Visibility.Visible;
+                status2.Visibility = Visibility.Visible;
+                status3.Visibility = Visibility.Visible;
+                status4.Visibility = Visibility.Visible; 
             }
             else
             {
-                this.progressBar.Visibility = Visibility.Hidden;
-                this.statusLbl.Visibility = Visibility.Hidden;
+                rect.Visibility = Visibility.Hidden;
+                status1.Visibility = Visibility.Hidden;
+                status2.Visibility = Visibility.Hidden;
+                status3.Visibility = Visibility.Hidden;
+                status4.Visibility = Visibility.Hidden;
+                img1.Visibility = Visibility.Hidden;
+                img2.Visibility = Visibility.Hidden;
+                img3.Visibility = Visibility.Hidden;
+                img4.Visibility = Visibility.Hidden;
+                prg1.Visibility = Visibility.Hidden;
+                prg2.Visibility = Visibility.Hidden;
+                prg3.Visibility = Visibility.Hidden;
+                prg4.Visibility = Visibility.Hidden;
             }
         }
     }
