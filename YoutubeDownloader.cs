@@ -249,7 +249,7 @@ namespace YTDL
                 }
             }
 
-            var audioFileName = $"{video.Title}-audio-.{audioTrack.Container.Name}"
+            var audioFileName = $"{video.Title}-audio.{audioTrack.Container.Name}"
                 .Replace('\\', '-')
                 .Replace('/', '-')
                 .Replace('*', '-')
@@ -298,7 +298,7 @@ namespace YTDL
                 }
             }
 
-            var videoFileName = $"{video.Title}-video-.{videoTrack.Container.Name}"
+            var videoFileName = $"{video.Title}-video.{videoTrack.Container.Name}"
                 .Replace('\\', '-')
                 .Replace('/', '-')
                 .Replace('*', '-')
